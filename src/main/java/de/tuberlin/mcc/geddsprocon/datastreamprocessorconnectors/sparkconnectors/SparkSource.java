@@ -28,16 +28,20 @@ import scala.Tuple20;
 import scala.Tuple21;
 import scala.Tuple22;
 
-public class SparkSource<T> extends Receiver<T> implements IDSPSourceConnector{
+import java.io.Serializable;
+
+public class SparkSource extends Receiver<Serializable> implements IDSPSourceConnector{
 
     private String host;
     private int port;
+    private boolean transform;
     private volatile boolean isRunning = true;
 
-    public SparkSource (String host, int port) {
+    public SparkSource (String host, int port, boolean transform) {
         super(StorageLevel.MEMORY_AND_DISK_2());
         this.host = host;
         this.port = port;
+        this.transform = transform;
     }
 
     @Override
@@ -60,7 +64,10 @@ public class SparkSource<T> extends Receiver<T> implements IDSPSourceConnector{
 
                 while (this.isRunning && (byteMessage = SocketPool.getInstance().receiveSocket(host, port)) != null) {
 
-                    T message = (T)SerializationUtils.deserialize(byteMessage);
+                    Serializable message = (Serializable)SerializationUtils.deserialize(byteMessage);
+
+                    if(message instanceof de.tuberlin.mcc.geddsprocon.tuple.Tuple && transform)
+                        message = (Serializable)TupleTransformer.transformFromIntermediateTuple((de.tuberlin.mcc.geddsprocon.tuple.Tuple)message);
 
                     // Print the message. For testing purposes
                     System.out.println("Received " + ": [" + message + "]");

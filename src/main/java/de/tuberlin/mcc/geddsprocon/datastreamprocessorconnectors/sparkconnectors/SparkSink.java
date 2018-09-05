@@ -12,10 +12,12 @@ import java.io.Serializable;
 public class SparkSink<T extends JavaRDDLike> implements IDSPSinkConnector, VoidFunction<T> {
     private String host;
     private int port;
+    private boolean transform;
 
-    public SparkSink(String host, int port) {
+    public SparkSink(String host, int port, boolean transform) {
         this.host = host;
         this.port = port;
+        this.transform = transform;
     }
 
     @Override
@@ -32,6 +34,9 @@ public class SparkSink<T extends JavaRDDLike> implements IDSPSinkConnector, Void
     public void call(T value) throws Exception {
         for(Object rdd : value.collect()) {
             if(rdd instanceof Serializable) {
+                if(rdd instanceof scala.Product && transform)
+                    rdd = TupleTransformer.transformToIntermediateTuple((scala.Product)rdd);
+
                 byte[] byteMessage = SerializationUtils.serialize((Serializable)rdd);
                 SocketPool.getInstance().sendSocket(host, port, byteMessage);
             }

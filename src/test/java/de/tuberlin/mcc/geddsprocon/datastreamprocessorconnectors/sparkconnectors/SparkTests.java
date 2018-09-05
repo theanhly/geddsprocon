@@ -1,6 +1,7 @@
 package de.tuberlin.mcc.geddsprocon.datastreamprocessorconnectors.sparkconnectors;
 
 import de.tuberlin.mcc.geddsprocon.DSPConnectorFactory;
+import org.apache.commons.lang.SerializationUtils;
 import org.apache.spark.SparkConf;
 import org.apache.spark.api.java.function.FlatMapFunction;
 import org.apache.spark.api.java.function.Function2;
@@ -8,13 +9,12 @@ import org.apache.spark.api.java.function.PairFunction;
 import org.apache.spark.api.java.function.VoidFunction;
 import org.apache.spark.serializer.KryoSerializer;
 import org.apache.spark.streaming.Duration;
-import org.apache.spark.streaming.api.java.JavaDStream;
-import org.apache.spark.streaming.api.java.JavaPairDStream;
-import org.apache.spark.streaming.api.java.JavaReceiverInputDStream;
-import org.apache.spark.streaming.api.java.JavaStreamingContext;
+import org.apache.spark.streaming.api.java.*;
 import org.apache.spark.streaming.receiver.Receiver;
 import org.junit.Test;
+import org.zeromq.ZMQ;
 import scala.Tuple2;
+import scala.Tuple5;
 
 import java.util.Arrays;
 import java.util.Iterator;
@@ -24,6 +24,27 @@ public class SparkTests {
     @Test
     public void sparkSourceTest() {
         try {
+            ZMQ.Context context = ZMQ.context(1);
+
+            //  Socket to talk to server
+            System.out.println("Connecting to hello world server…");
+
+            ZMQ.Socket sender = context.socket(ZMQ.PUSH);
+            sender.connect("tcp://localhost:6555");
+
+            String[] testArray = new String[5];
+            testArray[0] = "a a a a a a a a b b b b b b b b a a a a a b b b b";
+            testArray[1] = "c c c c a a a b b b";
+            testArray[2] = "a a a a d d d d";
+            testArray[3] = "e e e e e a a a b";
+            testArray[4] = "u u u m m m m m c c c";
+
+            for(int i = 0; i < testArray.length; i++) {
+                System.out.println("Sending: " + testArray[i]);
+                sender.send(SerializationUtils.serialize(testArray[i]), 0);
+            }
+
+
             SparkConf sparkConf = new SparkConf().setAppName("JavaCustomReceiver").setMaster("local[*]").set("spark.executor.memory","1g").set("spark.serializer", KryoSerializer.class.getName());
             JavaStreamingContext ssc = new JavaStreamingContext(sparkConf, new Duration(5000));
 
@@ -59,6 +80,26 @@ public class SparkTests {
     @Test
     public void sparkSinkTest() {
         try {
+            ZMQ.Context context = ZMQ.context(1);
+
+            //  Socket to talk to server
+            System.out.println("Connecting to hello world server…");
+
+            ZMQ.Socket sender = context.socket(ZMQ.PUSH);
+            sender.connect("tcp://localhost:6555");
+
+            String[] testArray = new String[5];
+            testArray[0] = "a a a a a a a a b b b b b b b b a a a a a b b b b";
+            testArray[1] = "c c c c a a a b b b";
+            testArray[2] = "a a a a d d d d";
+            testArray[3] = "e e e e e a a a b";
+            testArray[4] = "u u u m m m m m c c c";
+
+            for(int i = 0; i < testArray.length; i++) {
+                System.out.println("Sending: " + testArray[i]);
+                sender.send(SerializationUtils.serialize(testArray[i]), 0);
+            }
+
             SparkConf sparkConf = new SparkConf().setAppName("JavaCustomReceiver").setMaster("local[*]").set("spark.executor.memory","1g").set("spark.serializer", KryoSerializer.class.getName());
             JavaStreamingContext ssc = new JavaStreamingContext(sparkConf, new Duration(5000));
 
@@ -87,6 +128,105 @@ public class SparkTests {
 
             wordCounts.foreachRDD((VoidFunction)new DSPConnectorFactory<>().createSinkConnector(DSPConnectorFactory.DataStreamProcessors.SPARK, "localhost", 6556));
 
+            //wordCounts.print();
+            ssc.start();
+            ssc.awaitTermination();
+        } catch(Exception ex) {
+            System.err.println(ex.toString() + ex.getStackTrace());
+        }
+    }
+
+    // ======== Pipeline test 1a =======
+    @Test
+    public void sparkPipeline1aTest() {
+        try {
+            ZMQ.Context context = ZMQ.context(1);
+
+            //  Socket to talk to server
+            System.out.println("Connecting to hello world server…");
+
+            ZMQ.Socket sender = context.socket(ZMQ.PUSH);
+            sender.connect("tcp://localhost:6555");
+
+            String[] testArray = new String[5];
+            testArray[0] = "a a a a a a a a b b b b b b b b a a a a a b b b b";
+            testArray[1] = "c c c c a a a b b b";
+            testArray[2] = "a a a a d d d d";
+            testArray[3] = "e e e e e a a a b";
+            testArray[4] = "u u u m m m m m c c c";
+
+            for(int i = 0; i < testArray.length; i++) {
+                System.out.println("Sending: " + testArray[i]);
+                sender.send(SerializationUtils.serialize(testArray[i]), 0);
+            }
+
+            SparkConf sparkConf = new SparkConf().setAppName("JavaCustomReceiver").setMaster("local[*]").set("spark.executor.memory","1g").set("spark.serializer", KryoSerializer.class.getName());
+            JavaStreamingContext ssc = new JavaStreamingContext(sparkConf, new Duration(5000));
+
+            // Create an input stream with the custom receiver on target ip:port and count the
+            // words in input stream of \n delimited text (eg. generated by 'nc')
+            JavaReceiverInputDStream<String> lines =
+                    ssc.receiverStream((Receiver)new DSPConnectorFactory<>().createSourceConnector(DSPConnectorFactory.DataStreamProcessors.SPARK, "localhost", 6555));
+
+            //      Split each line into words
+            JavaDStream<String> words = lines.flatMap(
+                    (FlatMapFunction<String, String>) x -> Arrays.asList(x.split(" ")).iterator()
+            );
+
+            //words.foreachRDD((VoidFunction)new DSPConnectorFactory<>().createSinkConnector(DSPConnectorFactory.DataStreamProcessors.SPARK, "localhost", 6556));
+
+            //      Count each word in each batch
+            JavaPairDStream<String, Integer> pairs = words.mapToPair(
+                    (PairFunction<String, String, Integer>) s -> new Tuple2<>(s, 1)
+            );
+
+
+            //      Cumulate the sum from each batch
+            //JavaPairDStream<String, Integer> wordCounts = pairs.reduceByKey(
+            //        (Function2<Integer, Integer, Integer>) (i1, i2) -> i1 + i2
+            //);
+
+            pairs.foreachRDD((VoidFunction)new DSPConnectorFactory<>().createSinkConnector(DSPConnectorFactory.DataStreamProcessors.SPARK, "localhost", 6556));
+
+            //wordCounts.print();
+            ssc.start();
+            ssc.awaitTermination();
+        } catch(Exception ex) {
+            System.err.println(ex.toString() + ex.getStackTrace());
+        }
+    }
+
+    @Test
+    public void sparkPipeline1bTest() {
+        try {
+
+            SparkConf sparkConf = new SparkConf().setAppName("JavaCustomReceiver").setMaster("local[*]").set("spark.executor.memory","1g").set("spark.serializer", KryoSerializer.class.getName());
+            JavaStreamingContext ssc = new JavaStreamingContext(sparkConf, new Duration(5000));
+
+            // Create an input stream with the custom receiver on target ip:port and count the
+            // words in input stream of \n delimited text (eg. generated by 'nc')
+            JavaReceiverInputDStream<Tuple2<String, Integer>> tuples = ssc.receiverStream((Receiver)new DSPConnectorFactory<>().createSourceConnector(DSPConnectorFactory.DataStreamProcessors.SPARK, "localhost", 6556));
+
+            //      Split each line into words
+            //JavaDStream<String> words = lines.flatMap(
+            //       (FlatMapFunction<String, String>) x -> Arrays.asList(x.split(" ")).iterator()
+            //);
+
+            //words.foreachRDD((VoidFunction)new DSPConnectorFactory<>().createSinkConnector(DSPConnectorFactory.DataStreamProcessors.SPARK, "localhost", 6556));
+
+            //      Count each word in each batch
+            JavaPairDStream<String, Integer> pairs = tuples.mapToPair(
+                    (PairFunction<Tuple2<String, Integer>, String, Integer>) s -> new Tuple2<>(s._1, s._2)
+            );
+
+
+            //      Cumulate the sum from each batch
+            JavaPairDStream<String, Integer> wordCounts = pairs.reduceByKey(
+                    (Function2<Integer, Integer, Integer>) (i1, i2) -> i1 + i2
+            );
+
+            //wordCounts.foreachRDD((VoidFunction)new DSPConnectorFactory<>().createSinkConnector(DSPConnectorFactory.DataStreamProcessors.SPARK, "localhost", 6556));
+
             wordCounts.print();
             ssc.start();
             ssc.awaitTermination();
@@ -94,5 +234,101 @@ public class SparkTests {
             System.err.println(ex.toString() + ex.getStackTrace());
         }
     }
+    // ====== end of pipeline test =======
+
+    // ====== send tuple to flink test =======
+    @Test
+    public void sparkPipelineSendToFlinkTest1() {
+        try {
+            ZMQ.Context context = ZMQ.context(1);
+
+            //  Socket to talk to server
+            System.out.println("Connecting to hello world server…");
+
+            ZMQ.Socket sender = context.socket(ZMQ.PUSH);
+            sender.connect("tcp://localhost:7555");
+
+            String[] testArray = new String[5];
+            testArray[0] = "HelloFromSpark a a a a a a a a b b b b b b b b a a a a a b b b b";
+            testArray[1] = "c c c c a a a b b b";
+            testArray[2] = "a a a a d d d d";
+            testArray[3] = "e e e e e a a a b";
+            testArray[4] = "u u u m m m m m c c c";
+
+            for(int i = 0; i < testArray.length; i++) {
+                System.out.println("Sending: " + testArray[i]);
+                sender.send(SerializationUtils.serialize(testArray[i]), 0);
+            }
+
+            SparkConf sparkConf = new SparkConf().setAppName("JavaCustomReceiver").setMaster("local[*]").set("spark.executor.memory","1g").set("spark.serializer", KryoSerializer.class.getName());
+            JavaStreamingContext ssc = new JavaStreamingContext(sparkConf, new Duration(5000));
+
+            // Create an input stream with the custom receiver on target ip:port and count the
+            // words in input stream of \n delimited text (eg. generated by 'nc')
+            JavaReceiverInputDStream<String> lines =
+                    ssc.receiverStream((Receiver)new DSPConnectorFactory<>().createSourceConnector(DSPConnectorFactory.DataStreamProcessors.SPARK, "localhost", 7555));
+
+            //      Split each line into words
+            JavaDStream<String> words = lines.flatMap(
+                    (FlatMapFunction<String, String>) x -> Arrays.asList(x.split(" ")).iterator()
+            );
+
+            //      Count each word in each batch
+            JavaPairDStream<String, Integer> pairs = words.mapToPair(
+                    (PairFunction<String, String, Integer>) s -> new Tuple2<>(s, 1)
+            );
+
+            pairs.foreachRDD((VoidFunction)new DSPConnectorFactory<>().createSinkConnector(DSPConnectorFactory.DataStreamProcessors.SPARK, "localhost", 7556));
+
+            //wordCounts.print();
+            ssc.start();
+            ssc.awaitTermination();
+        } catch(Exception ex) {
+            System.err.println(ex.toString() + ex.getStackTrace());
+        }
+    }
+    // ====== end =======
+
+
+    // ====== receive tuple from flink test =======
+    @Test
+    public void sparkPipelineReceiveFromFlinkTest1() {
+        try {
+
+            SparkConf sparkConf = new SparkConf().setAppName("JavaCustomReceiver").setMaster("local[*]").set("spark.executor.memory","1g").set("spark.serializer", KryoSerializer.class.getName());
+            JavaStreamingContext ssc = new JavaStreamingContext(sparkConf, new Duration(5000));
+
+            // Create an input stream with the custom receiver on target ip:port and count the
+            // words in input stream of \n delimited text (eg. generated by 'nc')
+            JavaReceiverInputDStream<Tuple2<String, Integer>> tuples = ssc.receiverStream((Receiver)new DSPConnectorFactory<>().createSourceConnector(DSPConnectorFactory.DataStreamProcessors.SPARK, "localhost", 8556));
+
+            //      Split each line into words
+            //JavaDStream<String> words = lines.flatMap(
+            //       (FlatMapFunction<String, String>) x -> Arrays.asList(x.split(" ")).iterator()
+            //);
+
+            //words.foreachRDD((VoidFunction)new DSPConnectorFactory<>().createSinkConnector(DSPConnectorFactory.DataStreamProcessors.SPARK, "localhost", 6556));
+
+            //      Count each word in each batch
+            JavaPairDStream<String, Integer> pairs = tuples.mapToPair(
+                    (PairFunction<Tuple2<String, Integer>, String, Integer>) s -> new Tuple2<>(s._1, s._2)
+            );
+
+
+            //      Cumulate the sum from each batch
+            JavaPairDStream<String, Integer> wordCounts = pairs.reduceByKey(
+                    (Function2<Integer, Integer, Integer>) (i1, i2) -> i1 + i2
+            );
+
+            //wordCounts.foreachRDD((VoidFunction)new DSPConnectorFactory<>().createSinkConnector(DSPConnectorFactory.DataStreamProcessors.SPARK, "localhost", 6556));
+
+            wordCounts.print();
+            ssc.start();
+            ssc.awaitTermination();
+        } catch(Exception ex) {
+            System.err.println(ex.toString() + ex.getStackTrace());
+        }
+    }
+    // ====== end =======
 
 }

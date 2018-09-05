@@ -7,26 +7,33 @@ import org.apache.flink.api.java.tuple.*;
 import org.apache.flink.streaming.api.functions.source.SourceFunction;
 import org.zeromq.ZMQ;
 
-public class FlinkSource<T> implements SourceFunction<T>, IDSPSourceConnector {
+import java.io.Serializable;
+
+public class FlinkSource implements SourceFunction<Serializable>, IDSPSourceConnector {
 
     private String host;
     private int port;
+    private boolean transform;
     private volatile boolean isRunning = true;
 
-    public FlinkSource(String host, int port) {
+    public FlinkSource(String host, int port, boolean transform) {
         this.host = host;
         this.port = port;
+        this.transform = transform;
     }
 
     @Override
-    public void run(SourceContext<T> ctx) throws Exception {
+    public void run(SourceContext<Serializable> ctx) throws Exception {
         //startSource();
         while(isRunning) {
             byte[] byteMessage;
 
             while (this.isRunning && (byteMessage = SocketPool.getInstance().receiveSocket(host, port)) != null) {
 
-                T message = (T)SerializationUtils.deserialize(byteMessage);
+                Serializable message = (Serializable)SerializationUtils.deserialize(byteMessage);
+
+                if(message instanceof de.tuberlin.mcc.geddsprocon.tuple.Tuple)
+                    message = TupleTransformer.transformFromIntermediateTuple((de.tuberlin.mcc.geddsprocon.tuple.Tuple)message);
 
                 // Print the message. For testing purposes
                 System.out.println("Received " + ": [" + message + "]");
