@@ -1,6 +1,5 @@
 package de.tuberlin.mcc.geddsprocon.datastreamprocessorconnectors;
 
 public interface IDSPSinkConnector {
-    public void startSink();
-    public void stopSink();
+    void sendData(String host, int port, byte[] message);
 }

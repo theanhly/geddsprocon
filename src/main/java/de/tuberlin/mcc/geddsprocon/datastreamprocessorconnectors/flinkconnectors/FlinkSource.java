@@ -28,15 +28,12 @@ public class FlinkSource implements SourceFunction<Serializable>, IDSPSourceConn
         while(isRunning) {
             byte[] byteMessage;
 
-            while (this.isRunning && (byteMessage = SocketPool.getInstance().receiveSocket(host, port)) != null) {
+            while (this.isRunning && (byteMessage = receiveData(this.host, this.port)) != null) {
 
                 Serializable message = (Serializable)SerializationUtils.deserialize(byteMessage);
 
-                if(message instanceof de.tuberlin.mcc.geddsprocon.tuple.Tuple)
+                if(message instanceof de.tuberlin.mcc.geddsprocon.tuple.Tuple && this.transform)
                     message = TupleTransformer.transformFromIntermediateTuple((de.tuberlin.mcc.geddsprocon.tuple.Tuple)message);
-
-                // Print the message. For testing purposes
-                System.out.println("Received " + ": [" + message + "]");
 
                 ctx.collect(message);
             }
@@ -45,15 +42,6 @@ public class FlinkSource implements SourceFunction<Serializable>, IDSPSourceConn
 
     @Override
     public void cancel() {
-        stopSource();
-    }
-
-    @Override
-    public void startSource() {
-    }
-
-    @Override
-    public void stopSource() {
         this.isRunning = false;
 
         try {
@@ -61,5 +49,10 @@ public class FlinkSource implements SourceFunction<Serializable>, IDSPSourceConn
         } catch (IllegalArgumentException   ex) {
             System.err.println(ex.toString());
         }
+    }
+
+    @Override
+    public byte[] receiveData(String host, int port) {
+        return SocketPool.getInstance().receiveSocket(host, port);
     }
 }

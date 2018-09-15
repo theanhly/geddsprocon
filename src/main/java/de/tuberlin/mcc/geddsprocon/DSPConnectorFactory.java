@@ -7,10 +7,9 @@ import de.tuberlin.mcc.geddsprocon.datastreamprocessorconnectors.flinkconnectors
 import de.tuberlin.mcc.geddsprocon.datastreamprocessorconnectors.flinkconnectors.FlinkSource;
 import de.tuberlin.mcc.geddsprocon.datastreamprocessorconnectors.sparkconnectors.SparkSink;
 import de.tuberlin.mcc.geddsprocon.datastreamprocessorconnectors.sparkconnectors.SparkSource;
+import de.tuberlin.mcc.geddsprocon.tuple.Tuple2;
 
-import java.io.Serializable;
-
-public class DSPConnectorFactory<T extends Serializable> {
+public class DSPConnectorFactory<T extends Object> {
 
     public enum DataStreamProcessors {
         FLINK,
@@ -20,48 +19,14 @@ public class DSPConnectorFactory<T extends Serializable> {
     /*
     @param Class type information needed to serialize tuples, pull or push based Connectors
      */
-    public IDSPSourceConnector createSourceConnector(DataStreamProcessors dataStreamProcessor, String host, int port) {
+    public IDSPSourceConnector createSourceConnector(DSPConnectorConfig config) {
         try {
-            return createSourceConnector(dataStreamProcessor, host, port, 1, true);
-        } catch (Exception ex) {
-            System.err.println(ex.toString());
-        }
-
-        return null;
-    }
-
-    public IDSPSourceConnector createSourceConnector(DataStreamProcessors dataStreamProcessor, String host, int port, boolean transform) {
-        try {
-            return createSourceConnector(dataStreamProcessor, host, port, 1, transform);
-        } catch (Exception ex) {
-            System.err.println(ex.toString());
-        }
-
-        return null;
-    }
-
-    public IDSPSourceConnector createSourceConnector(DataStreamProcessors dataStreamProcessor, String host, int port, int setHWM) {
-        try {
-            return createSourceConnector(dataStreamProcessor, host, port, setHWM, true);
-        } catch (Exception ex) {
-            System.err.println(ex.toString());
-        }
-
-        return null;
-    }
-
-    /*
-    @param Class type information needed to serialize tuples, pull or push based Connectors
-     */
-    public IDSPSourceConnector createSourceConnector(DataStreamProcessors dataStreamProcessor, String host, int port, int setHWM, boolean transform) {
-        try {
-            switch(dataStreamProcessor) {
+            SocketPool.getInstance().createSockets(SocketPool.SocketType.PULL, config);
+            switch(config.getDSP()) {
                 case FLINK:
-                    SocketPool.getInstance().getSocket(SocketPool.SocketType.PULL, host, port, setHWM);
-                    return new FlinkSource(host, port, transform);
+                    return new FlinkSource(config.getHost(), config.getPort(), config.getTransform());
                 case SPARK:
-                    SocketPool.getInstance().getSocket(SocketPool.SocketType.PULL, host, port, setHWM);
-                    return new SparkSource(host, port, transform);
+                    return new SparkSource(config.getHost(), config.getPort(), config.getTransform());
                 default:
                     break;
             }
@@ -72,48 +37,15 @@ public class DSPConnectorFactory<T extends Serializable> {
         return null;
     }
 
-
-
-
-    public IDSPSinkConnector createSinkConnector(DataStreamProcessors dataStreamProcessor, String host, int port) {
+    public IDSPSinkConnector createSinkConnector(DSPConnectorConfig config) {
         try {
-            return createSinkConnector(dataStreamProcessor, host, port, 0, true);
-        } catch (Exception ex) {
-            System.err.println(ex.toString());
-        }
+            SocketPool.getInstance().createSockets(SocketPool.SocketType.PUSH, config);
 
-        return null;
-    }
-
-    public IDSPSinkConnector createSinkConnector(DataStreamProcessors dataStreamProcessor, String host, int port, int setHWM) {
-        try {
-            return createSinkConnector(dataStreamProcessor, host, port, setHWM, true);
-        } catch (Exception ex) {
-            System.err.println(ex.toString());
-        }
-
-        return null;
-    }
-
-    public IDSPSinkConnector createSinkConnector(DataStreamProcessors dataStreamProcessor, String host, int port, boolean transform) {
-        try {
-            return createSinkConnector(dataStreamProcessor, host, port, 0, transform);
-        } catch (Exception ex) {
-            System.err.println(ex.toString());
-        }
-
-        return null;
-    }
-
-    public IDSPSinkConnector createSinkConnector(DataStreamProcessors dataStreamProcessor, String host, int port, int setHWM, boolean transform) {
-        try {
-            switch(dataStreamProcessor) {
+            switch(config.getDSP()) {
                 case FLINK:
-                    SocketPool.getInstance().getSocket(SocketPool.SocketType.PUSH, host, port, setHWM);
-                    return new FlinkSink(host, port, transform);
+                    return new FlinkSink(config);
                 case SPARK:
-                    SocketPool.getInstance().getSocket(SocketPool.SocketType.PUSH, host, port, setHWM);
-                    return new SparkSink<>(host, port, transform);
+                    return new SparkSink<>(config);
                 default:
                     break;
             }

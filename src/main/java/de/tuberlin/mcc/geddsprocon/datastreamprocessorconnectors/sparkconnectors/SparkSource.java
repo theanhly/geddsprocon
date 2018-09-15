@@ -56,21 +56,17 @@ public class SparkSource extends Receiver<Serializable> implements IDSPSourceCon
         // is designed to stop by itself if isStopped() returns false
     }
 
-    @Override
     public void startSource() {
         try {
             while(isRunning) {
                 byte[] byteMessage;
 
-                while (this.isRunning && (byteMessage = SocketPool.getInstance().receiveSocket(host, port)) != null) {
+                while (this.isRunning && (byteMessage = receiveData(this.host, this.port)) != null) {
 
                     Serializable message = (Serializable)SerializationUtils.deserialize(byteMessage);
 
                     if(message instanceof de.tuberlin.mcc.geddsprocon.tuple.Tuple && transform)
                         message = (Serializable)TupleTransformer.transformFromIntermediateTuple((de.tuberlin.mcc.geddsprocon.tuple.Tuple)message);
-
-                    // Print the message. For testing purposes
-                    System.out.println("Received " + ": [" + message + "]");
 
                     store(message);
                 }
@@ -81,7 +77,7 @@ public class SparkSource extends Receiver<Serializable> implements IDSPSourceCon
     }
 
     @Override
-    public void stopSource() {
-
+    public byte[] receiveData(String host, int port) {
+        return SocketPool.getInstance().receiveSocket(host, port);
     }
 }
