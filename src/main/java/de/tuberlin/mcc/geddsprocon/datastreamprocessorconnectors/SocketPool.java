@@ -13,9 +13,10 @@ import org.apache.commons.lang.NullArgumentException;
 import org.apache.commons.lang.SerializationUtils;
 import org.zeromq.ZContext;
 import org.zeromq.ZMQ;
+import org.zeromq.ZMsg;
 
 public class SocketPool {
-    public enum SocketType { PULL, PUSH, PUB, SUB };
+    public enum SocketType { PULL, PUSH, PUB, SUB, REP, REQ, ROUTER, DEFAULT };
 
     private static SocketPool socketFactoryInstance = new SocketPool();
 
@@ -40,11 +41,11 @@ public class SocketPool {
                     "([01]?\\d\\d?|2[0-4]\\d|25[0-5])\\." +
                     "([01]?\\d\\d?|2[0-4]\\d|25[0-5])$";
 
-    public synchronized ZMQ.Socket getSocket(String host, int port) throws IllegalArgumentException {
-        return getSocket(null, host, port, null);
+    public synchronized ZMQ.Socket getOrCreateSocket(String host, int port) throws IllegalArgumentException {
+        return getOrCreateSocket(null, host, port, null);
     }
 
-    public synchronized ZMQ.Socket getSocket(SocketType socketType, String host, int port, DSPConnectorConfig config) throws IllegalArgumentException {
+    public synchronized ZMQ.Socket getOrCreateSocket(SocketType socketType, String host, int port, DSPConnectorConfig config) throws IllegalArgumentException {
 
         // TODO: use regex to validate host
 
@@ -71,7 +72,7 @@ public class SocketPool {
         }
     }
 
-    public synchronized ZMQ.Socket createSocket(SocketType socketType, String host, int port, DSPConnectorConfig config) {
+    private synchronized ZMQ.Socket createSocket(SocketType socketType, String host, int port, DSPConnectorConfig config) {
         String key = host + ":" + port;
 
         ZMQ.Socket socket = null;
@@ -96,12 +97,35 @@ public class SocketPool {
                 socket = this.context.socket(ZMQ.PUSH);
                 socket.setSendTimeOut(config.getTimeout());
                 socket.setSndHWM(config.getHwm());
+                socket.setImmediate(true);
+                socket.setSendBufferSize(1);
                 socket.connect("tcp://"+  key);
                 break;
             case PUB:
                 socket = this.context.socket(ZMQ.PUB);
                 socket.setSendTimeOut(config.getTimeout());
                 socket.setSndHWM(config.getHwm());
+                socket.setImmediate(true);
+                socket.bind("tcp://"+  key);
+                break;
+            case REP:
+                socket = this.context.socket(ZMQ.REP);
+                socket.setSendTimeOut(config.getTimeout());
+                socket.setHWM(config.getHwm());
+                socket.setImmediate(true);
+                socket.bind("tcp://"+  key);
+                break;
+            case REQ:
+                socket = this.context.socket(ZMQ.REQ);
+                //socket.setSendTimeOut(config.getTimeout());
+                socket.setHWM(config.getHwm());
+                socket.setImmediate(true);
+                socket.connect("tcp://"+  key);
+                break;
+            case ROUTER:
+                socket = this.context.socket(ZMQ.ROUTER);
+                //socket.setReceiveTimeOut(config.getTimeout());
+                //socket.setRcvHWM(config.getHwm());
                 socket.bind("tcp://"+  key);
                 break;
         }
@@ -115,11 +139,28 @@ public class SocketPool {
         return socket;
     }
 
+    public synchronized ZMsg receiveSocket(String host, int port, int bla) {
+        ZMQ.Socket socket = getOrCreateSocket(host, port);
+        // non blocking receive needed
+        //return socket.recv(ZMQ.DONTWAIT);
+
+        socket.send("1", 0);
+
+        return ZMsg.recvMsg(socket);
+    }
+
+    public synchronized byte[] receiveSocket(String host, int port) {
+        ZMQ.Socket socket = getOrCreateSocket(host, port);
+        // non blocking receive needed
+        return socket.recv(ZMQ.DONTWAIT);
+    }
+
+    @Deprecated
     public synchronized int sendSocket(int iteration, ArrayList<Tuple2<String, Integer>> addresses, byte[] message) {
         String currentHost = addresses.get(iteration%addresses.size()).f0;
         int currentPort = addresses.get(iteration%addresses.size()).f1;
 
-        ZMQ.Socket socket = SocketPool.getInstance().getSocket(currentHost, currentPort);
+        ZMQ.Socket socket = SocketPool.getInstance().getOrCreateSocket(currentHost, currentPort);
         String newHost = currentHost;
         int newPort = currentPort;
 
@@ -130,7 +171,7 @@ public class SocketPool {
             newHost = addresses.get(i%addresses.size()).f0;
             newPort = addresses.get(i%addresses.size()).f1;
 
-            socket = SocketPool.getInstance().getSocket(newHost, newPort);
+            socket = SocketPool.getInstance().getOrCreateSocket(newHost, newPort);
             System.out.println(new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS").format(new Date()).toString() + ": Sending failed. Sending " + SerializationUtils.deserialize(message).toString() + " to " + newHost + ":" + newPort);
         }
 
@@ -139,15 +180,18 @@ public class SocketPool {
         return iteration;
     }
 
-    public synchronized boolean sendSocket(String host, int port, byte[] message, DSPConnectorConfig config) {
-        ZMQ.Socket socket = getSocket(host, port);
-        return socket.send(message);
+    public synchronized void stopSockets(DSPConnectorConfig config) {
+        //for(Tuple2<String, Integer> tuple : config.getAddresses())
+         //   stopSocket(tuple.f0, tuple.f1);
     }
 
-    public synchronized byte[] receiveSocket(String host, int port) {
-        ZMQ.Socket socket = getSocket(host, port);
-        // non blocking receive needed
-        return socket.recv(ZMQ.DONTWAIT);
-    }
+    public synchronized void stopSocket(String host, int port) {
+        String key = host + ":" + port;
 
+        if(this.sockets.containsKey(key)) {
+            ZMQ.Socket clientSocket = this.sockets.get(key);
+            clientSocket.close();
+            this.sockets.remove(key);
+        }
+    }
 }

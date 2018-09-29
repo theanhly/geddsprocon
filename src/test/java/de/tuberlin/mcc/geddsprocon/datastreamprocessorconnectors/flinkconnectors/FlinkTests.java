@@ -4,6 +4,7 @@ import de.tuberlin.mcc.geddsprocon.DSPConnectorFactory;
 //import de.tuberlin.mcc.geddsprocon.tuple.*;
 
 import de.tuberlin.mcc.geddsprocon.DSPConnectorConfig;
+import de.tuberlin.mcc.geddsprocon.datastreamprocessorconnectors.SocketPool;
 import org.apache.flink.api.java.tuple.*;
 import org.apache.commons.lang.SerializationUtils;
 import org.apache.flink.api.common.functions.FlatMapFunction;
@@ -268,7 +269,6 @@ public class FlinkTests {
 
             ZMQ.Socket sender = context.socket(ZMQ.PUSH);
             sender.connect("tcp://localhost:9655");
-
             String testString =  "a b c d e f g h i j k l m n o p q r s t u v w x y z";
 
             System.out.println("Sending: " + testString);
@@ -276,22 +276,30 @@ public class FlinkTests {
 
             StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
 
-            DataStream<Tuple2<String, Integer>> dataStream = env
-                    .addSource((SourceFunction)new DSPConnectorFactory().createSourceConnector(new DSPConnectorConfig.Builder("localhost", 9655).withDSP("flink").build()), TypeInformation.of(String.class))
-                    .flatMap(new Splitter());
+            DataStream<String> dataStream = env
+                    .addSource((SourceFunction)new DSPConnectorFactory().createSourceConnector(new DSPConnectorConfig.Builder("localhost", 9655)
+                            .withSocketType(SocketPool.SocketType.PULL)
+                            .withDSP("flink")
+                            .build()), TypeInformation.of(String.class));
 
-            dataStream.addSink((SinkFunction)new DSPConnectorFactory().createSinkConnector(new DSPConnectorConfig.Builder("localhost", 9656)
+            // Start netcat listener: 'nc -l 9755'
+            DataStream<String> dataStream2 = env.socketTextStream("localhost", 9755);
+
+
+            DataStream<Tuple2<String, Integer>> dataStream3 = dataStream.union(dataStream2).flatMap(new Splitter());
+
+            dataStream3.addSink((SinkFunction)new DSPConnectorFactory().createSinkConnector(new DSPConnectorConfig.Builder("localhost", 9656)
                     .withDSP("flink")
                     .withAddress("localhost", 9657)
                     .withTimeout(10000)
                     .withoutTransformation()
                     .build()));
 
-            dataStream.print();
+            dataStream3.print();
 
             env.execute("Window WordCount");
         } catch (Exception ex) {
-            System.err.println(ex.getStackTrace());
+            System.err.println(ex.toString() + ex.getStackTrace());
         }
     }
 }

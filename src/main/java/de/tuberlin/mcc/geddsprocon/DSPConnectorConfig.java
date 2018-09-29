@@ -1,6 +1,7 @@
 package de.tuberlin.mcc.geddsprocon;
 
 
+import de.tuberlin.mcc.geddsprocon.datastreamprocessorconnectors.SocketPool;
 import de.tuberlin.mcc.geddsprocon.tuple.Tuple2;
 
 import java.io.Serializable;
@@ -14,6 +15,7 @@ public class DSPConnectorConfig implements Serializable {
     private int port;
     private int timeout;
     private boolean transform;
+    private SocketPool.SocketType socketType;
 
     private DSPConnectorConfig(String host, int port) {
         this.host = host;
@@ -38,6 +40,10 @@ public class DSPConnectorConfig implements Serializable {
         return this.port;
     }
 
+    public SocketPool.SocketType getSocketType() {
+        return this.socketType;
+    }
+
     public int getTimeout() { return timeout; }
 
     public boolean getTransform() {
@@ -56,11 +62,13 @@ public class DSPConnectorConfig implements Serializable {
         private int port;
         private int timeout = -1;
         private boolean transform = true;
+        private SocketPool.SocketType socketType = SocketPool.SocketType.DEFAULT;
 
         public Builder(String host, int port) {
             this.host = host;
             this.port = port;
             this.addresses = new ArrayList<>();
+
             withAddress(this.host, this.port);
         }
 
@@ -103,6 +111,11 @@ public class DSPConnectorConfig implements Serializable {
             return this;
         }
 
+        public Builder withSocketType(SocketPool.SocketType socketType) {
+            this.socketType = socketType;
+            return this;
+        }
+
         public Builder withoutTransformation() {
             this.transform = false;
             return this;
@@ -123,6 +136,7 @@ public class DSPConnectorConfig implements Serializable {
             config.dsp = this.dsp;
             config.transform = this.transform;
             config.hwm = this.hwm;
+            config.socketType = this.socketType;
             return config;
         }
     }

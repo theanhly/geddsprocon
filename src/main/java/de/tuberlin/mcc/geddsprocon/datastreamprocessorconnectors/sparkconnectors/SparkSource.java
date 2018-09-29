@@ -52,24 +52,23 @@ public class SparkSource extends Receiver<Serializable> implements IDSPSourceCon
 
     @Override
     public void onStop() {
-        // There is nothing much to do as the thread calling receive()
-        // is designed to stop by itself if isStopped() returns false
+        if(isStopped())
+            SocketPool.getInstance().stopSocket(this.host, this.port);
+
     }
 
     public void startSource() {
         try {
-            while(isRunning) {
-                byte[] byteMessage;
+            byte[] byteMessage;
 
-                while (this.isRunning && (byteMessage = receiveData(this.host, this.port)) != null) {
+            while (!isStopped() && (byteMessage = receiveData(this.host, this.port)) != null) {
 
-                    Serializable message = (Serializable)SerializationUtils.deserialize(byteMessage);
+                Serializable message = (Serializable)SerializationUtils.deserialize(byteMessage);
 
-                    if(message instanceof de.tuberlin.mcc.geddsprocon.tuple.Tuple && transform)
-                        message = (Serializable)TupleTransformer.transformFromIntermediateTuple((de.tuberlin.mcc.geddsprocon.tuple.Tuple)message);
+                if(message instanceof de.tuberlin.mcc.geddsprocon.tuple.Tuple && transform)
+                    message = (Serializable)TupleTransformer.transformFromIntermediateTuple((de.tuberlin.mcc.geddsprocon.tuple.Tuple)message);
 
-                    store(message);
-                }
+                store(message);
             }
         } catch(Throwable t) {
             restart("Error receiving data", t);

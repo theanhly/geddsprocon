@@ -45,8 +45,8 @@ public class FlinkSource implements SourceFunction<Serializable>, IDSPSourceConn
         this.isRunning = false;
 
         try {
-            SocketPool.getInstance().getSocket(host, port).close();
-        } catch (IllegalArgumentException   ex) {
+            SocketPool.getInstance().stopSocket(this.host, this.port);
+        } catch (IllegalArgumentException  ex) {
             System.err.println(ex.toString());
         }
     }
