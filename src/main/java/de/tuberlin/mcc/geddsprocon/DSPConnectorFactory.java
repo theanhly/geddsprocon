@@ -17,18 +17,23 @@ public class DSPConnectorFactory<T extends Object> {
         SPARK
     }
 
-    /*
-    @param Class type information needed to serialize tuples, pull or push based Connectors
+    /**
+     * Connector type enum for source connectors. discuss MASTER instead of PRIMARY
      */
+    public class ConnectorType {
+        public static final String PRIMARY     = "PRIMARY";
+        public static final String SECONDARY   = "SECONDARY";
+    }
+
     public IDSPSourceConnector createSourceConnector(DSPConnectorConfig config) {
         try {
             SocketPool.getInstance().createSockets(config.getSocketType() == SocketPool.SocketType.DEFAULT ? SocketPool.SocketType.REQ : SocketPool.SocketType.PULL, config);
             MessageBuffer.getInstance().initiateBuffer(20);
             switch(config.getDSP()) {
                 case FLINK:
-                    return new FlinkSource(config.getHost(), config.getPort(), config.getTransform());
+                    return new FlinkSource(config);
                 case SPARK:
-                    return new SparkSource(config.getHost(), config.getPort(), config.getTransform());
+                    return new SparkSource(config);
                 default:
                     break;
             }
@@ -41,21 +46,29 @@ public class DSPConnectorFactory<T extends Object> {
 
     public IDSPSinkConnector createSinkConnector(DSPConnectorConfig config) {
         try {
+            // if no sockettype is
             SocketPool.getInstance().createSockets(config.getSocketType() == SocketPool.SocketType.DEFAULT ? SocketPool.SocketType.ROUTER : SocketPool.SocketType.PUSH, config);
+            // initiate the buffer. make it 20 for now for testing purposes. later get the buffer size depending on the hwm (?)
             MessageBuffer.getInstance().initiateBuffer(20);
+            IDSPSinkConnector sink = null;
             switch(config.getDSP()) {
                 case FLINK:
-                    FlinkSink sink = new FlinkSink(config);
-                    DSPManager manager = new DSPManager(config.getHost(), config.getPort(), sink);
-                    MessageBuffer.getInstance().addListener(manager);
-                    Thread managerThread = new Thread(manager);
-                    managerThread.start();
-                    return sink;
+                    sink = new FlinkSink(config);
+                    break;
                 case SPARK:
-                    return new SparkSink<>(config);
+                    sink = new SparkSink<>(config);
                 default:
                     break;
             }
+
+            // initiate the manager
+            DSPManager manager = new DSPManager(config.getHost(), config.getPort(), sink.getBufferFunction());
+            // add the manager as a listener to the message buffer
+            MessageBuffer.getInstance().addListener(manager);
+            // start the manager thread
+            Thread managerThread = new Thread(manager);
+            managerThread.start();
+            return sink;
         } catch (Exception ex) {
             System.err.println(ex.toString());
         }

@@ -15,6 +15,7 @@ public class DSPConnectorConfig implements Serializable {
     private int port;
     private int timeout;
     private boolean transform;
+    private String connectorType;
     private SocketPool.SocketType socketType;
 
     private DSPConnectorConfig(String host, int port) {
@@ -40,6 +41,8 @@ public class DSPConnectorConfig implements Serializable {
         return this.port;
     }
 
+    public String getConncetorType() { return this.connectorType; }
+
     public SocketPool.SocketType getSocketType() {
         return this.socketType;
     }
@@ -62,6 +65,7 @@ public class DSPConnectorConfig implements Serializable {
         private int port;
         private int timeout = -1;
         private boolean transform = true;
+        private String connectorType = DSPConnectorFactory.ConnectorType.PRIMARY;
         private SocketPool.SocketType socketType = SocketPool.SocketType.DEFAULT;
 
         public Builder(String host, int port) {
@@ -72,6 +76,7 @@ public class DSPConnectorConfig implements Serializable {
             withAddress(this.host, this.port);
         }
 
+        @Deprecated
         public Builder withAddress(String host, int port) {
             this.addresses.add(new Tuple2<>(host,port));
             return this;
@@ -111,6 +116,11 @@ public class DSPConnectorConfig implements Serializable {
             return this;
         }
 
+        public Builder withConnectorType(String connectorType) {
+            this.connectorType = connectorType;
+            return this;
+        }
+
         public Builder withSocketType(SocketPool.SocketType socketType) {
             this.socketType = socketType;
             return this;
@@ -136,6 +146,7 @@ public class DSPConnectorConfig implements Serializable {
             config.dsp = this.dsp;
             config.transform = this.transform;
             config.hwm = this.hwm;
+            config.connectorType = this.connectorType;
             config.socketType = this.socketType;
             return config;
         }

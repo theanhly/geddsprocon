@@ -34,21 +34,6 @@ public class FlinkTests {
     }
 
     @Test
-    public void serializerTest() {
-        Tuple4<String, Integer, Double, Boolean> test = new Tuple4<String, Integer, Double, Boolean>("test", 2, 0.2323123541, false);
-
-
-        byte[] testByteArr = SerializationUtils.serialize(test);
-
-        Tuple4 testObj = (Tuple4)SerializationUtils.deserialize(testByteArr);
-
-        Assert.assertEquals("test", testObj.f0);
-        Assert.assertEquals(2, testObj.f1);
-        Assert.assertEquals(0.2323123541, testObj.f2);
-        Assert.assertFalse((Boolean)testObj.f3);
-    }
-
-    @Test
     public void sourceTest() {
         try {
             ZMQ.Context context = ZMQ.context(1);
@@ -258,9 +243,13 @@ public class FlinkTests {
     }
     // ======= End test ======
 
-    // ======== Additional addresses test =======
+    //
+    // NEW PULL BASED APPROACH
+    //
+
+    // ======== start test: pull based approach test 1 =======
     @Test
-    public void additionalAddressesTest() {
+    public void pullBasedApproachSink1() {
         try {
             ZMQ.Context context = ZMQ.context(1);
 
@@ -269,10 +258,17 @@ public class FlinkTests {
 
             ZMQ.Socket sender = context.socket(ZMQ.PUSH);
             sender.connect("tcp://localhost:9655");
-            String testString =  "a b c d e f g h i j k l m n o p q r s t u v w x y z";
+            String[] testArray = new String[5];
+            testArray[0] = "HelloFromFlink a a a a a a a a b b b b b b b b a a a a a b b b b";
+            testArray[1] = "c c c c a a a b b b";
+            testArray[2] = "a a a a d d d d";
+            testArray[3] = "e e e e e a a a b";
+            testArray[4] = "u u u m m m m m c c c";
 
-            System.out.println("Sending: " + testString);
-            sender.send(SerializationUtils.serialize(testString), 0);
+            for(int i = 0; i < testArray.length; i++) {
+                System.out.println("Sending: " + testArray[i]);
+                sender.send(SerializationUtils.serialize(testArray[i]), 0);
+            }
 
             StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
 
@@ -290,9 +286,7 @@ public class FlinkTests {
 
             dataStream3.addSink((SinkFunction)new DSPConnectorFactory().createSinkConnector(new DSPConnectorConfig.Builder("localhost", 9656)
                     .withDSP("flink")
-                    .withAddress("localhost", 9657)
                     .withTimeout(10000)
-                    .withoutTransformation()
                     .build()));
 
             dataStream3.print();
@@ -302,4 +296,27 @@ public class FlinkTests {
             System.err.println(ex.toString() + ex.getStackTrace());
         }
     }
+
+    @Test
+    public void pullBasedApproachSource1() {
+        try {
+            StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
+
+            DataStream<Tuple2<String, Integer>> dataStream = env
+                    .addSource((SourceFunction)new DSPConnectorFactory<>().createSourceConnector(new DSPConnectorConfig.Builder("localhost", 9656)
+                            .withDSP("flink")
+                            .withConnectorType(DSPConnectorFactory.ConnectorType.PRIMARY)
+                            .build()), TypeInfoParser.parse("Tuple2<String,Integer>"))
+                    .keyBy("f0")
+                    .timeWindow(Time.seconds(5))
+                    .sum("f1");
+
+            dataStream.print();
+
+            env.execute("Window WordCount");
+        } catch (Exception ex) {
+            System.err.println(ex.toString() + ex.getStackTrace().toString());
+        }
+    }
+    // ======== end test: pull based approach test 1 =======
 }

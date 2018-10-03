@@ -124,8 +124,8 @@ public class SocketPool {
                 break;
             case ROUTER:
                 socket = this.context.socket(ZMQ.ROUTER);
-                //socket.setReceiveTimeOut(config.getTimeout());
-                //socket.setRcvHWM(config.getHwm());
+                //socket.setSendTimeOut(config.getTimeout());
+                //socket.setSndHWM(config.getHwm());
                 socket.bind("tcp://"+  key);
                 break;
         }
@@ -181,8 +181,8 @@ public class SocketPool {
     }
 
     public synchronized void stopSockets(DSPConnectorConfig config) {
-        //for(Tuple2<String, Integer> tuple : config.getAddresses())
-         //   stopSocket(tuple.f0, tuple.f1);
+        for(Tuple2<String, Integer> tuple : config.getAddresses())
+            stopSocket(tuple.f0, tuple.f1);
     }
 
     public synchronized void stopSocket(String host, int port) {

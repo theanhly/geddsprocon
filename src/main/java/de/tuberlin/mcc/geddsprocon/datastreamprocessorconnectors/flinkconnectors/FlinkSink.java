@@ -62,9 +62,10 @@ public class FlinkSink extends RichSinkFunction<Serializable> implements IDSPSin
         SocketPool.getInstance().stopSockets(this.config);
     }
 
+    // BufferFunction
     @Override
-    public void sendData(String host, int port, byte[] message) {
-        //this.currentIteration = SocketPool.getInstance().sendSocket(this.currentIteration, this.config.getAddresses(), message);
+    public IMessageBufferFunction getBufferFunction() {
+        return this;
     }
 
     @Override

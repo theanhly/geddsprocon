@@ -3,15 +3,18 @@ package de.tuberlin.mcc.geddsprocon.datastreamprocessorconnectors.sparkconnector
 import de.tuberlin.mcc.geddsprocon.DSPConnectorConfig;
 import de.tuberlin.mcc.geddsprocon.datastreamprocessorconnectors.IDSPSinkConnector;
 import de.tuberlin.mcc.geddsprocon.datastreamprocessorconnectors.SocketPool;
+import de.tuberlin.mcc.geddsprocon.messagebuffer.IMessageBufferFunction;
+import de.tuberlin.mcc.geddsprocon.messagebuffer.MessageBuffer;
 import org.apache.commons.lang.SerializationUtils;
 import org.apache.spark.api.java.JavaRDD;
 import org.apache.spark.api.java.JavaRDDLike;
 import org.apache.spark.api.java.function.VoidFunction;
 import org.zeromq.ZMQ;
+import org.zeromq.ZMsg;
 
 import java.io.Serializable;
 
-public class SparkSink<T extends JavaRDDLike> implements IDSPSinkConnector, VoidFunction<T> {
+public class SparkSink<T extends JavaRDDLike> implements IDSPSinkConnector, VoidFunction<T>, IMessageBufferFunction {
     private String host;
     private int port;
     private boolean transform;
@@ -34,12 +37,32 @@ public class SparkSink<T extends JavaRDDLike> implements IDSPSinkConnector, Void
                     rdd = TupleTransformer.transformToIntermediateTuple((scala.Product)rdd);
 
                 byte[] byteMessage = SerializationUtils.serialize((Serializable)rdd);
-                sendData(this.host, this.port, byteMessage);
+
+                // block while the buffer is full
+                System.out.println("Written to buffer");
+                while(MessageBuffer.getInstance().isFull()) {}
+
+                MessageBuffer.getInstance().writeBuffer(byteMessage);
+                System.out.println("Written to buffer");
             }
         }
     }
 
-    public void sendData(String host, int port, byte[] message) {
-        this.currentIteration = SocketPool.getInstance().sendSocket(this.currentIteration, this.config.getAddresses(), message);
+    @Override
+    public IMessageBufferFunction getBufferFunction() {
+        return this;
+    }
+
+    @Override
+    public ZMsg flush(MessageBuffer messageBuffer) {
+        ZMsg messages = new ZMsg();
+        for(byte[] byteMessage : messageBuffer.getBuffer()) {
+            if(byteMessage.length == 1 && byteMessage[0] == 0)
+                break;
+
+            messages.add(byteMessage);
+        }
+
+        return messages;
     }
 }

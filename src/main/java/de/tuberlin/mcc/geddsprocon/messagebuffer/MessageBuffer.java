@@ -38,15 +38,26 @@ public class MessageBuffer {
         return this.messages <= 0;
     }
 
+    /**
+     * initiate the buffer with the default size
+     */
     public void initiateBuffer() {
         initiateBuffer(this.bufferSize);
     }
 
+    /**
+     * initiate the buffer. the buffer size determines the messages the buffer should hold
+     * @param bufferSize
+     */
     public void initiateBuffer(int bufferSize) {
         this.bufferSize = bufferSize;
         this.buffer = new byte[this.bufferSize][];
     }
 
+    /**
+     * writes bytes to the buffer. if the messages surpass the buffer size old messages are overwritten
+     * @param bytes bytes which are written into the buffer
+     */
     public void writeBuffer(byte[] bytes) {
         // buffer gets overwritten if buffer isn't flushed in time
         synchronized (this.bufferLock) {
@@ -62,6 +73,11 @@ public class MessageBuffer {
         }
     }
 
+    /**
+     * flush buffer. requires a buffer function to determine what to do with the buffer
+     * @param bufferFunction
+     * @return
+     */
     public ZMsg flushBuffer(IMessageBufferFunction bufferFunction) {
         synchronized(this.bufferLock) {
             if(!isFull())
@@ -74,7 +90,10 @@ public class MessageBuffer {
         }
     }
 
-
+    /**
+     * method for testing purposes
+     * @return
+     */
     public int getMessages() {
         return this.messages;
     }
