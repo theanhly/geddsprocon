@@ -1,14 +1,17 @@
 package de.tuberlin.mcc.geddsprocon;
 
 
+import com.google.common.base.Strings;
 import de.tuberlin.mcc.geddsprocon.datastreamprocessorconnectors.SocketPool;
 import de.tuberlin.mcc.geddsprocon.tuple.Tuple2;
+import de.tuberlin.mcc.geddsprocon.tuple.Tuple3;
 
 import java.io.Serializable;
 import java.util.ArrayList;
 
 public class DSPConnectorConfig implements Serializable {
     private ArrayList<Tuple2<String, Integer>> addresses;
+    private ArrayList<Tuple3<String, Integer, String>> requestAddresses;
     private DSPConnectorFactory.DataStreamProcessors dsp;
     private int hwm;
     private String host;
@@ -18,12 +21,18 @@ public class DSPConnectorConfig implements Serializable {
     private String connectorType;
     private SocketPool.SocketType socketType;
 
+    private DSPConnectorConfig() {
+        this("", -1);
+    }
+
     private DSPConnectorConfig(String host, int port) {
         this.host = host;
         this.port = port;
     }
 
     public ArrayList<Tuple2<String, Integer>> getAddresses() { return addresses; }
+
+    public ArrayList<Tuple3<String, Integer, String>> getRequestAddresses() { return requestAddresses; }
 
     public DSPConnectorFactory.DataStreamProcessors getDSP() {
         return this.dsp;
@@ -59,6 +68,7 @@ public class DSPConnectorConfig implements Serializable {
         private final int DEFAULTTIMEOUT = 30000;
 
         private ArrayList<Tuple2<String, Integer>> addresses;
+        private ArrayList<Tuple3<String, Integer, String>> requestAddresses;
         private DSPConnectorFactory.DataStreamProcessors dsp = null;
         private String host;
         private int hwm = 1;
@@ -68,17 +78,27 @@ public class DSPConnectorConfig implements Serializable {
         private String connectorType = DSPConnectorFactory.ConnectorType.PRIMARY;
         private SocketPool.SocketType socketType = SocketPool.SocketType.DEFAULT;
 
+        public Builder() {
+            this("", -1);
+        }
+
         public Builder(String host, int port) {
             this.host = host;
             this.port = port;
             this.addresses = new ArrayList<>();
-
-            withAddress(this.host, this.port);
+            this.requestAddresses = new ArrayList<>();
+            if(!Strings.isNullOrEmpty(this.host) && this.port > 0)
+                withAddress(this.host, this.port);
         }
 
         @Deprecated
         public Builder withAddress(String host, int port) {
             this.addresses.add(new Tuple2<>(host,port));
+            return this;
+        }
+
+        public Builder withRequestAddress(String host, int port, String connectorType) {
+            this.requestAddresses.add(new Tuple3<>(host,port, connectorType));
             return this;
         }
 
@@ -116,6 +136,7 @@ public class DSPConnectorConfig implements Serializable {
             return this;
         }
 
+        @Deprecated
         public Builder withConnectorType(String connectorType) {
             this.connectorType = connectorType;
             return this;
@@ -139,6 +160,7 @@ public class DSPConnectorConfig implements Serializable {
         public DSPConnectorConfig build() {
             DSPConnectorConfig config = new DSPConnectorConfig(this.host, this.port);
             config.addresses = this.addresses;
+            config.requestAddresses = this.requestAddresses;
             // first address is the main address. timeout is only set if there are additional addresses. if there are additional addresses but the timeout is smaller than 0 then the default value should be used
             config.timeout = this.addresses.size() > 1 ? this.timeout > -1 ? this.timeout : this.DEFAULTTIMEOUT : -1;
             if(this.dsp == null)

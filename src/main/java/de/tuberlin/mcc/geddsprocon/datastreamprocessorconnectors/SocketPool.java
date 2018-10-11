@@ -9,6 +9,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import de.tuberlin.mcc.geddsprocon.DSPConnectorConfig;
 import de.tuberlin.mcc.geddsprocon.tuple.Tuple;
 import de.tuberlin.mcc.geddsprocon.tuple.Tuple2;
+import de.tuberlin.mcc.geddsprocon.tuple.Tuple3;
 import org.apache.commons.lang.NullArgumentException;
 import org.apache.commons.lang.SerializationUtils;
 import org.zeromq.ZContext;
@@ -25,13 +26,11 @@ public class SocketPool {
     }
 
 
-    private ConcurrentHashMap<String, ZMQ.Socket> sockets;
-    private ConcurrentHashMap<String, ZMQ.Context> contextMap;
-    private ZMQ.Context context;
+    private volatile ConcurrentHashMap<String, ZMQ.Socket> sockets;
+    private volatile ZMQ.Context context;
 
     private SocketPool() {
-        this.sockets = new ConcurrentHashMap<String, ZMQ.Socket>();
-        this.contextMap = new ConcurrentHashMap<String, ZMQ.Context>();
+        this.sockets = new ConcurrentHashMap<>();
         this.context = ZMQ.context(1);
     }
 
@@ -68,6 +67,10 @@ public class SocketPool {
 
     public synchronized void createSockets(SocketType socketType, DSPConnectorConfig config) {
         for(Tuple2<String, Integer> tuple : config.getAddresses()) {
+            createSocket(socketType, tuple.f0, tuple.f1, config);
+        }
+
+        for(Tuple3<String, Integer, String> tuple : config.getRequestAddresses()) {
             createSocket(socketType, tuple.f0, tuple.f1, config);
         }
     }
@@ -134,7 +137,6 @@ public class SocketPool {
         //socket.setHWM(config.getHwm());
 
         this.sockets.put(key, socket);
-        this.contextMap.put(key, context);
 
         return socket;
     }
@@ -183,6 +185,11 @@ public class SocketPool {
     public synchronized void stopSockets(DSPConnectorConfig config) {
         for(Tuple2<String, Integer> tuple : config.getAddresses())
             stopSocket(tuple.f0, tuple.f1);
+
+        if(this.context != null) {
+            this.context.term();
+            this.context = null;
+        }
     }
 
     public synchronized void stopSocket(String host, int port) {

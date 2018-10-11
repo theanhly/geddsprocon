@@ -54,9 +54,9 @@ public class SparkSink<T extends JavaRDDLike> implements IDSPSinkConnector, Void
     }
 
     @Override
-    public ZMsg flush(MessageBuffer messageBuffer) {
+    public ZMsg flush(byte[][] buffer) {
         ZMsg messages = new ZMsg();
-        for(byte[] byteMessage : messageBuffer.getBuffer()) {
+        for(byte[] byteMessage : buffer) {
             if(byteMessage.length == 1 && byteMessage[0] == 0)
                 break;
 

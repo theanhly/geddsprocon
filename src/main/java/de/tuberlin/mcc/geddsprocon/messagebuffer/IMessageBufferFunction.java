@@ -4,5 +4,5 @@ import org.zeromq.ZMsg;
 
 public interface IMessageBufferFunction {
 
-    ZMsg flush(MessageBuffer messageBuffer);
+    ZMsg flush(byte[][] buffer);
 }

@@ -257,7 +257,7 @@ public class FlinkTests {
             System.out.println("Connecting to hello world server…");
 
             ZMQ.Socket sender = context.socket(ZMQ.PUSH);
-            sender.connect("tcp://localhost:9655");
+            sender.connect("tcp://localhost:9665");
             String[] testArray = new String[5];
             testArray[0] = "HelloFromFlink a a a a a a a a b b b b b b b b a a a a a b b b b";
             testArray[1] = "c c c c a a a b b b";
@@ -273,7 +273,7 @@ public class FlinkTests {
             StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
 
             DataStream<String> dataStream = env
-                    .addSource((SourceFunction)new DSPConnectorFactory().createSourceConnector(new DSPConnectorConfig.Builder("localhost", 9655)
+                    .addSource((SourceFunction)new DSPConnectorFactory().createSourceConnector(new DSPConnectorConfig.Builder("localhost", 9665)
                             .withSocketType(SocketPool.SocketType.PULL)
                             .withDSP("flink")
                             .build()), TypeInformation.of(String.class));
@@ -303,9 +303,10 @@ public class FlinkTests {
             StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
 
             DataStream<Tuple2<String, Integer>> dataStream = env
-                    .addSource((SourceFunction)new DSPConnectorFactory<>().createSourceConnector(new DSPConnectorConfig.Builder("localhost", 9656)
+                    .addSource((SourceFunction)new DSPConnectorFactory<>().createSourceConnector(new DSPConnectorConfig.Builder()
                             .withDSP("flink")
-                            .withConnectorType(DSPConnectorFactory.ConnectorType.PRIMARY)
+                            .withRequestAddress("localhost", 9656, DSPConnectorFactory.ConnectorType.PRIMARY)
+                            .withRequestAddress("localhost", 9666, DSPConnectorFactory.ConnectorType.PRIMARY)
                             .build()), TypeInfoParser.parse("Tuple2<String,Integer>"))
                     .keyBy("f0")
                     .timeWindow(Time.seconds(5))

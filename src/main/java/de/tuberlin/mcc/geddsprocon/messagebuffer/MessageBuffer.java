@@ -3,6 +3,7 @@ package de.tuberlin.mcc.geddsprocon.messagebuffer;
 import de.tuberlin.mcc.geddsprocon.tuple.Tuple2;
 import org.zeromq.ZMsg;
 
+import java.util.Arrays;
 import java.util.LinkedList;
 
 public class MessageBuffer {
@@ -47,7 +48,7 @@ public class MessageBuffer {
 
     /**
      * initiate the buffer. the buffer size determines the messages the buffer should hold
-     * @param bufferSize
+     * @param bufferSize init buffer size
      */
     public void initiateBuffer(int bufferSize) {
         this.bufferSize = bufferSize;
@@ -76,7 +77,7 @@ public class MessageBuffer {
     /**
      * flush buffer. requires a buffer function to determine what to do with the buffer
      * @param bufferFunction
-     * @return
+     * @return ZeroMQ multi part message
      */
     public ZMsg flushBuffer(IMessageBufferFunction bufferFunction) {
         synchronized(this.bufferLock) {
@@ -84,15 +85,22 @@ public class MessageBuffer {
                 writeBuffer(new byte[] {(byte)0});
 
             // callback call flushing of buffer
-            ZMsg messages = bufferFunction.flush(this);
+            ZMsg messages = bufferFunction.flush(this.buffer);
             this.messages = 0;
             return messages;
         }
     }
 
+    public void clearBuffer() {
+        synchronized(this.bufferLock) {
+            this.messages = 0;
+            Arrays.fill(this.buffer, new byte[]{(byte)0});
+        }
+    }
+
     /**
      * method for testing purposes
-     * @return
+     * @return number of messages in the buffer
      */
     public int getMessages() {
         return this.messages;

@@ -3,16 +3,15 @@ package de.tuberlin.mcc.geddsprocon.datastreamprocessorconnectors.flinkconnector
 import de.tuberlin.mcc.geddsprocon.DSPConnectorConfig;
 import de.tuberlin.mcc.geddsprocon.datastreamprocessorconnectors.IDSPSourceConnector;
 import de.tuberlin.mcc.geddsprocon.datastreamprocessorconnectors.SocketPool;
+import de.tuberlin.mcc.geddsprocon.messagebuffer.IMessageBufferFunction;
+import de.tuberlin.mcc.geddsprocon.messagebuffer.MessageBuffer;
 import org.apache.commons.lang.SerializationUtils;
-import org.apache.flink.api.java.tuple.*;
 import org.apache.flink.streaming.api.functions.source.SourceFunction;
-import org.zeromq.ZFrame;
-import org.zeromq.ZMQ;
 import org.zeromq.ZMsg;
 
 import java.io.Serializable;
 
-public class FlinkSource implements SourceFunction<Serializable>, IDSPSourceConnector {
+public class FlinkSource implements SourceFunction<Serializable>, IDSPSourceConnector, IMessageBufferFunction {
 
     private String host;
     private int port;
@@ -20,6 +19,7 @@ public class FlinkSource implements SourceFunction<Serializable>, IDSPSourceConn
     private volatile boolean isRunning = true;
     private final DSPConnectorConfig config;
     private final String connectorType;
+    private SourceContext<Serializable> ctx;
 
     public FlinkSource(DSPConnectorConfig config) {
         this.config = config;
@@ -30,68 +30,14 @@ public class FlinkSource implements SourceFunction<Serializable>, IDSPSourceConn
     }
 
     @Override
-    public synchronized void run(SourceContext<Serializable> ctx) throws Exception {
+    public void run(SourceContext<Serializable> ctx) {
        collect(ctx);
-        /* while(isRunning) {
-            byte[] byteMessage;
-
-            /*
-            while (this.isRunning && (byteMessage = receiveData(this.host, this.port)) != null) {
-
-                Serializable message = (Serializable)SerializationUtils.deserialize(byteMessage);
-
-                if(message instanceof de.tuberlin.mcc.geddsprocon.tuple.Tuple && this.transform)
-                    message = TupleTransformer.transformFromIntermediateTuple((de.tuberlin.mcc.geddsprocon.tuple.Tuple)message);
-
-                ctx.collect(message);
-            }
-
-            if(config.getSocketType() == SocketPool.SocketType.PULL) {
-                while ((byteMessage = receiveData(this.host, this.port)) != null) {
-
-                    Serializable message = (Serializable)SerializationUtils.deserialize(byteMessage);
-
-                    if(message instanceof de.tuberlin.mcc.geddsprocon.tuple.Tuple && this.transform)
-                        message = TupleTransformer.transformFromIntermediateTuple((de.tuberlin.mcc.geddsprocon.tuple.Tuple)message);
-
-                    ctx.collect(message);
-                }
-            } else if(config.getSocketType() == SocketPool.SocketType.REQ || config.getSocketType() == SocketPool.SocketType.DEFAULT) {
-                ZMQ.Socket socket = SocketPool.getInstance().getOrCreateSocket(this.host, this.port);
-
-                socket.send(this.connectorType);
-
-                System.out.println("Trying to receive");
-
-                ZMsg messages = ZMsg.recvMsg(socket);
-
-                for(ZFrame frame : messages) {
-                    Serializable message = (Serializable)SerializationUtils.deserialize(frame.getData());
-
-                    if(message instanceof de.tuberlin.mcc.geddsprocon.tuple.Tuple && transform)
-                        message = (Serializable)TupleTransformer.transformFromIntermediateTuple((de.tuberlin.mcc.geddsprocon.tuple.Tuple)message);
-
-                    ctx.collect(message);
-                }
-            }
-        } */
     }
 
     private synchronized void collect(SourceContext<Serializable> ctx) {
         while(isRunning) {
             byte[] byteMessage;
 
-            /*
-            while (this.isRunning && (byteMessage = receiveData(this.host, this.port)) != null) {
-
-                Serializable message = (Serializable)SerializationUtils.deserialize(byteMessage);
-
-                if(message instanceof de.tuberlin.mcc.geddsprocon.tuple.Tuple && this.transform)
-                    message = TupleTransformer.transformFromIntermediateTuple((de.tuberlin.mcc.geddsprocon.tuple.Tuple)message);
-
-                ctx.collect(message);
-            } */
-
             if(config.getSocketType() == SocketPool.SocketType.PULL) {
                 while ((byteMessage = receiveData(this.host, this.port)) != null) {
 
@@ -103,21 +49,9 @@ public class FlinkSource implements SourceFunction<Serializable>, IDSPSourceConn
                     ctx.collect(message);
                 }
             } else if(config.getSocketType() == SocketPool.SocketType.REQ || config.getSocketType() == SocketPool.SocketType.DEFAULT) {
-                ZMQ.Socket socket = SocketPool.getInstance().getOrCreateSocket(this.host, this.port);
-
-                socket.send(this.connectorType);
-
-                System.out.println("Trying to receive");
-
-                ZMsg messages = ZMsg.recvMsg(socket);
-
-                for(ZFrame frame : messages) {
-                    Serializable message = (Serializable)SerializationUtils.deserialize(frame.getData());
-
-                    if(message instanceof de.tuberlin.mcc.geddsprocon.tuple.Tuple && transform)
-                        message = (Serializable)TupleTransformer.transformFromIntermediateTuple((de.tuberlin.mcc.geddsprocon.tuple.Tuple)message);
-
-                    ctx.collect(message);
+                if(!MessageBuffer.getInstance().isEmpty()) {
+                    this.ctx = ctx;
+                    MessageBuffer.getInstance().flushBuffer(this);
                 }
             }
         }
@@ -137,5 +71,22 @@ public class FlinkSource implements SourceFunction<Serializable>, IDSPSourceConn
     @Override
     public byte[] receiveData(String host, int port) {
         return SocketPool.getInstance().receiveSocket(host, port);
+    }
+
+    @Override
+    public synchronized ZMsg flush(byte[][] buffer) {
+        for(byte[] bytes : buffer) {
+            if(bytes.length == 1 && bytes[0] == 0)
+                break;
+
+            Serializable message = (Serializable)SerializationUtils.deserialize(bytes);
+
+            if(message instanceof de.tuberlin.mcc.geddsprocon.tuple.Tuple && this.transform)
+                message = TupleTransformer.transformFromIntermediateTuple((de.tuberlin.mcc.geddsprocon.tuple.Tuple)message);
+
+            this.ctx.collect(message);
+        }
+
+        return null;
     }
 }
