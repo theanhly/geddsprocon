@@ -1,5 +1,6 @@
 package de.tuberlin.mcc.geddsprocon.messagebuffer;
 
+import de.tuberlin.mcc.geddsprocon.common.JavaProcessBuilder;
 import org.junit.Test;
 import org.zeromq.ZFrame;
 import org.zeromq.ZMQ;
@@ -14,7 +15,7 @@ public class MessageBufferProcessTest {
 
     @Test
     public void testInit() throws IOException, InterruptedException{
-        Process process = JavaProcess.exec(MessageBufferProcess.class);
+        Process process = JavaProcessBuilder.exec(MessageBufferProcess.class);
         System.out.println("Thread ID " + Thread.currentThread().getId() + ": Test ending.");
         ZMQ.Context context = ZMQ.context(1);
 
@@ -23,9 +24,9 @@ public class MessageBufferProcessTest {
 
         ZMQ.Socket requester = context.socket(ZMQ.REQ);
         requester.setReceiveTimeOut(10000);
-        requester.connect("ipc:///test");
+        requester.connect("ipc:///message-buffer-process");
 
-        requester.send("test");
+        requester.send("INIT");
 
         //byte[] test = requester.recv(0);
         //System.out.println(SerializationUtils.deserialize(test));
@@ -40,31 +41,118 @@ public class MessageBufferProcessTest {
             Thread.sleep(100);
         }
 
+        requester.send("END");
+
+        System.out.println("Thread ID " + Thread.currentThread().getId() + ": Trying to receive");
+
+        messages = ZMsg.recvMsg(requester);
+
+        for(ZFrame frame : messages) {
+            System.out.println(frame.toString());
+            //System.out.println(new String(frame.getData()));
+            Thread.sleep(100);
+        }
+
         process.waitFor();
     }
-}
 
-final class JavaProcess {
+    @Test
+    public void writeBufferTest() throws IOException, InterruptedException{
+        Process process = JavaProcessBuilder.exec(MessageBufferProcess.class);
+        System.out.println("Thread ID " + Thread.currentThread().getId() + ": Test ending.");
+        ZMQ.Context context = ZMQ.context(1);
 
-    private JavaProcess() {}
+        //  Socket to talk to server
+        System.out.println("Thread ID " + Thread.currentThread().getId() + ": Connecting to hello world server…");
 
-    public static Process exec(Class javaClass) throws IOException,
-            InterruptedException {
-        String javaHome = System.getProperty("java.home");
-        String javaBin = javaHome +
-                File.separator + "bin" +
-                File.separator + "java";
-        String classpath = System.getProperty("java.class.path");
-        String className = javaClass.getCanonicalName();
+        ZMQ.Socket requester = context.socket(ZMQ.REQ);
+        requester.setReceiveTimeOut(10000);
+        requester.connect("ipc:///message-buffer-process");
 
-        ProcessBuilder builder = new ProcessBuilder(
-                javaBin, "-cp", classpath, className, "2000");
+        // Write buffer
+        ZMsg message = new ZMsg();
 
-        builder.redirectOutput(ProcessBuilder.Redirect.INHERIT);
-        builder.redirectError(ProcessBuilder.Redirect.INHERIT);
+        message.add("WRITE");
+        message.add("HALLO TEST".getBytes());
 
-        Process process = builder.start();
-        return process;
+        message.send(requester);
+
+        System.out.println("Thread ID " + Thread.currentThread().getId() + ": ’" + requester.recvStr() +  "’ received ");
+
+        message = new ZMsg();
+
+        message.add("WRITE");
+        message.add("HALLO TEST2".getBytes());
+
+        message.send(requester);
+
+        System.out.println("Thread ID " + Thread.currentThread().getId() + ": ’" + requester.recvStr() +  "’ received ");
+
+        // Peek buffer
+        requester.send("PEEKBUFFER");
+
+        System.out.println("Thread ID " + Thread.currentThread().getId() + ": Trying to peek buffer #1.");
+
+        ZMsg messages = ZMsg.recvMsg(requester);
+
+        for(ZFrame frame : messages) {
+            System.out.println("frame received [" + frame.toString() + "]");
+            //System.out.println(new String(frame.getData()));
+            Thread.sleep(100);
+        }
+
+        // Peek buffer again
+        requester.send("PEEKBUFFER");
+
+        System.out.println("Thread ID " + Thread.currentThread().getId() + ": Trying to peek buffer #2.");
+
+        messages = ZMsg.recvMsg(requester);
+
+        for(ZFrame frame : messages) {
+            System.out.println("frame received [" + frame.toString() + "]");
+            //System.out.println(new String(frame.getData()));
+            Thread.sleep(100);
+        }
+
+        // Clear buffer
+        requester.send("CLEARBUFFER");
+
+        System.out.println("Thread ID " + Thread.currentThread().getId() + ": Trying to clear buffer.");
+
+        messages = ZMsg.recvMsg(requester);
+
+        for(ZFrame frame : messages) {
+            System.out.println("frame received [" + frame.toString() + "]");
+            //System.out.println(new String(frame.getData()));
+            Thread.sleep(100);
+        }
+
+        // Peek buffer after clearing
+        requester.send("CLEARBUFFER");
+
+        System.out.println("Thread ID " + Thread.currentThread().getId() + ": Trying to peek buffer #3.");
+
+        messages = ZMsg.recvMsg(requester);
+
+        for(ZFrame frame : messages) {
+            System.out.println("frame received [" + frame.toString() + "]");
+            //System.out.println(new String(frame.getData()));
+            Thread.sleep(100);
+        }
+
+        // End message buffer process
+        requester.send("END");
+
+        System.out.println("Thread ID " + Thread.currentThread().getId() + ": Trying to receive");
+
+        messages = ZMsg.recvMsg(requester);
+
+        for(ZFrame frame : messages) {
+            System.out.println(frame.toString());
+            //System.out.println(new String(frame.getData()));
+            Thread.sleep(100);
+        }
+
+        process.waitFor();
     }
-
 }

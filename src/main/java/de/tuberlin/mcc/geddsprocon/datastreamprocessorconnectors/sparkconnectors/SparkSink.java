@@ -39,7 +39,6 @@ public class SparkSink<T extends JavaRDDLike> implements IDSPSinkConnector, Void
                 byte[] byteMessage = SerializationUtils.serialize((Serializable)rdd);
 
                 // block while the buffer is full
-                System.out.println("Written to buffer");
                 while(MessageBuffer.getInstance().isFull()) {}
 
                 MessageBuffer.getInstance().writeBuffer(byteMessage);
@@ -54,15 +53,15 @@ public class SparkSink<T extends JavaRDDLike> implements IDSPSinkConnector, Void
     }
 
     @Override
-    public ZMsg flush(byte[][] buffer) {
-        ZMsg messages = new ZMsg();
+    public ZMsg flush(ZMsg message) {
+        /*ZMsg messages = new ZMsg();
         for(byte[] byteMessage : buffer) {
             if(byteMessage.length == 1 && byteMessage[0] == 0)
                 break;
 
             messages.add(byteMessage);
-        }
+        }*/
 
-        return messages;
+        return message;
     }
 }

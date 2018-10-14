@@ -298,7 +298,7 @@ public class FlinkTests {
     }
 
     @Test
-    public void pullBasedApproachSource1() {
+    public void pullBasedApproachPrimarySource1() {
         try {
             StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
 
@@ -307,6 +307,29 @@ public class FlinkTests {
                             .withDSP("flink")
                             .withRequestAddress("localhost", 9656, DSPConnectorFactory.ConnectorType.PRIMARY)
                             .withRequestAddress("localhost", 9666, DSPConnectorFactory.ConnectorType.PRIMARY)
+                            .build()), TypeInfoParser.parse("Tuple2<String,Integer>"))
+                    .keyBy("f0")
+                    .timeWindow(Time.seconds(5))
+                    .sum("f1");
+
+            dataStream.print();
+
+            env.execute("Window WordCount");
+        } catch (Exception ex) {
+            System.err.println(ex.toString() + ex.getStackTrace().toString());
+        }
+    }
+
+    @Test
+    public void pullBasedApproachSecondarySource1() {
+        try {
+            StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
+
+            DataStream<Tuple2<String, Integer>> dataStream = env
+                    .addSource((SourceFunction)new DSPConnectorFactory<>().createSourceConnector(new DSPConnectorConfig.Builder()
+                            .withDSP("flink")
+                            .withRequestAddress("localhost", 9656, DSPConnectorFactory.ConnectorType.SECONDARY)
+                            .withRequestAddress("localhost", 9666, DSPConnectorFactory.ConnectorType.SECONDARY)
                             .build()), TypeInfoParser.parse("Tuple2<String,Integer>"))
                     .keyBy("f0")
                     .timeWindow(Time.seconds(5))

@@ -78,16 +78,16 @@ public class FlinkSink extends RichSinkFunction<Serializable> implements IDSPSin
     }
 
     @Override
-    public ZMsg flush(byte[][] buffer) {
-        ZMsg messages = new ZMsg();
+    public ZMsg flush(ZMsg message) {
+        /*ZMsg messages = new ZMsg();
         for(byte[] byteMessage : buffer) {
             if(byteMessage.length == 1 && byteMessage[0] == 0)
                 break;
 
             messages.add(byteMessage);
-        }
+        }*/
 
-        return messages;
+        return message;
     }
 
     @Override

@@ -19,6 +19,7 @@ public class DSPRouter implements Runnable, IMessageBufferListener {
     private volatile LinkedList<ZFrame> endpointQueue;
     private volatile HashSet<ZFrame> endpointSet;
     private final ZMQ.Socket socket;
+    private ZFrame temporaryPrimary;
 
     public DSPRouter(String host, int port, IMessageBufferFunction bufferFunction) {
         this.host = host;
@@ -39,19 +40,27 @@ public class DSPRouter implements Runnable, IMessageBufferListener {
             //  First frame is address
             ZFrame address = msg.pop();
 
-            //  Second frame is empty
-            String empty = new String(msg.pop().getData());
-            assert (empty.length() == 0);
+            //  Second frame is empty in a REQ socket. Second frame of DEALER socket is not empty
+            //String empty = new String(msg.pop().getData());
+            //assert (empty.length() == 0);
 
             String ready = new String(msg.pop().getData());
+            assert(ready.length() > 0);
 
             if(ready.equals(DSPConnectorFactory.ConnectorType.PRIMARY)) {
                 System.out.println(DSPConnectorFactory.ConnectorType.PRIMARY + " message received");
-                if(!reply(address))
+                if(!reply(address)) {
                     reply();
+                } else {
+                    this.temporaryPrimary = null;
+                }
             } else if(ready.equals(DSPConnectorFactory.ConnectorType.SECONDARY)) {
                 System.out.println(DSPConnectorFactory.ConnectorType.SECONDARY +" message received");
-                if(this.endpointSet.add(address))
+                // critical
+
+                if(this.temporaryPrimary != null && this.temporaryPrimary.hasData() && this.temporaryPrimary.getData().equals(address.getData()))
+                    reply(address);
+                else if(this.endpointSet.add(address))
                     this.endpointQueue.add(address);
             }
         }
@@ -65,6 +74,7 @@ public class DSPRouter implements Runnable, IMessageBufferListener {
         ZFrame addressFrame;
         do {
             addressFrame = this.endpointQueue.pop();
+            this.temporaryPrimary = addressFrame.duplicate();
             this.endpointSet.remove(addressFrame);
             System.out.println("Address popped");
         } while(!reply(addressFrame));
@@ -81,13 +91,25 @@ public class DSPRouter implements Runnable, IMessageBufferListener {
     private boolean reply(ZFrame address) {
         ZMsg message = new ZMsg();
         message.add(address);
-        message.add("");
+
+        // DEALER socket doesn't need an empty second frame
+        //message.add("");
 
         while(MessageBuffer.getInstance().isEmpty()) {}
 
-        message.append(MessageBuffer.getInstance().flushBuffer(this.bufferFunction));
-        System.out.println("Sending message " + message.toString());
-        return message.send(this.socket);
+        // TODO: critical error. the buffer is flushed but it might be the case that in the meantime new values could have been written into the buffer.
+        Object bufferLock = MessageBuffer.getInstance().getBufferLock();
+        synchronized (bufferLock) {
+            message.append(MessageBuffer.getInstance().flushBuffer(this.bufferFunction, false));
+            System.out.println("Sending message " + message.toString());
+            if(message.send(this.socket)) {
+                MessageBuffer.getInstance().clearBuffer();
+                return true;
+            } else {
+                System.err.println("Sending not successful.");
+                return false;
+            }
+        }
     }
 
     /**
@@ -95,9 +117,9 @@ public class DSPRouter implements Runnable, IMessageBufferListener {
      */
     @Override
     public void bufferIsFullEvent() {
-        System.out.println("Buffer event");
         while(this.endpointQueue.isEmpty() && MessageBuffer.getInstance().isFull()) {}
 
+        System.out.println("Buffer event");
         if(MessageBuffer.getInstance().isFull())
             reply();
     }

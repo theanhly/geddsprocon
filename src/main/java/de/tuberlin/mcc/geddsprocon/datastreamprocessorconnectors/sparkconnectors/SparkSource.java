@@ -73,24 +73,6 @@ public class SparkSource extends Receiver<Serializable> implements IDSPSourceCon
                     if(!MessageBuffer.getInstance().isEmpty()) {
                         MessageBuffer.getInstance().flushBuffer(this);
                     }
-                    /*ZMQ.Socket socket = SocketPool.getInstance().getOrCreateSocket(this.host, this.port);
-
-                    System.out.println("Send request");
-
-                    socket.send(this.connectorType);
-
-                    System.out.println("Trying to receive");
-
-                    ZMsg messages = ZMsg.recvMsg(socket);
-
-                    for(ZFrame frame : messages) {
-                        Serializable message = (Serializable)SerializationUtils.deserialize(frame.getData());
-
-                        if(message instanceof de.tuberlin.mcc.geddsprocon.tuple.Tuple && transform)
-                            message = (Serializable)TupleTransformer.transformFromIntermediateTuple((de.tuberlin.mcc.geddsprocon.tuple.Tuple)message);
-
-                        store(message);
-                    }*/
                 }
             }
 
@@ -105,12 +87,12 @@ public class SparkSource extends Receiver<Serializable> implements IDSPSourceCon
     }
 
     @Override
-    public synchronized ZMsg flush(byte[][] buffer) {
-        for(byte[] bytes : buffer) {
-            if(bytes.length == 1 && bytes[0] == 0)
-                break;
+    public synchronized ZMsg flush(ZMsg messages) {
+        for(ZFrame frame : messages) {
+            //if(frame.length == 1 && bytes[0] == 0)
+            //    break;
 
-            Serializable message = (Serializable)SerializationUtils.deserialize(bytes);
+            Serializable message = (Serializable)SerializationUtils.deserialize(frame.getData());
 
             if(message instanceof de.tuberlin.mcc.geddsprocon.tuple.Tuple && this.transform)
                 message = (Serializable)TupleTransformer.transformFromIntermediateTuple((de.tuberlin.mcc.geddsprocon.tuple.Tuple)message);

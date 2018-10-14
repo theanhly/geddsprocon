@@ -17,7 +17,7 @@ import org.zeromq.ZMQ;
 import org.zeromq.ZMsg;
 
 public class SocketPool {
-    public enum SocketType { PULL, PUSH, PUB, SUB, REP, REQ, ROUTER, DEFAULT };
+    public enum SocketType { PULL, PUSH, PUB, SUB, REP, REQ, ROUTER, DEALER, DEFAULT };
 
     private static SocketPool socketFactoryInstance = new SocketPool();
 
@@ -120,7 +120,16 @@ public class SocketPool {
                 break;
             case REQ:
                 socket = this.context.socket(ZMQ.REQ);
-                //socket.setSendTimeOut(config.getTimeout());
+                // hard code timeout
+                socket.setReceiveTimeOut(config.getTimeout());
+                socket.setHWM(config.getHwm());
+                socket.setImmediate(true);
+                socket.connect("tcp://"+  key);
+                break;
+            case DEALER:
+                socket = this.context.socket(ZMQ.DEALER);
+                // hard code timeout
+                //socket.setReceiveTimeOut(5000);
                 socket.setHWM(config.getHwm());
                 socket.setImmediate(true);
                 socket.connect("tcp://"+  key);

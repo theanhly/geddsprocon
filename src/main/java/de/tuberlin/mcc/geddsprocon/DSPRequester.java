@@ -28,15 +28,18 @@ public class DSPRequester implements Runnable {
         while(true) {
             socket.send(this.connectorType);
 
-            System.out.println("Trying to receive");
+            System.out.println("Trying to receive @" + this.host + ":" + this.port);
 
             ZMsg messages = ZMsg.recvMsg(socket);
 
-            for(ZFrame frame : messages) {
-                // block writing to buffer as long the buffer is full
-                while(MessageBuffer.getInstance().isFull()) {}
+            if(messages != null) {
+                System.out.println("Message received.");
+                for(ZFrame frame : messages) {
+                    // block writing to buffer as long the buffer is full
+                    while(MessageBuffer.getInstance().isFull()) {}
 
-                MessageBuffer.getInstance().writeBuffer(frame.getData());
+                    MessageBuffer.getInstance().writeBuffer(frame.getData());
+                }
             }
         }
     }
