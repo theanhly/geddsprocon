@@ -249,7 +249,62 @@ public class FlinkTests {
 
     // ======== start test: pull based approach test 1 =======
     @Test
-    public void pullBasedApproachSink1() {
+    public void pullBasedApproachSimpleSink1() {
+        try {
+            ZMQ.Context context = ZMQ.context(1);
+
+            //  Socket to talk to server
+            System.out.println("Connecting to hello world server…");
+
+            ZMQ.Socket sender = context.socket(ZMQ.PUSH);
+            sender.connect("tcp://localhost:9665");
+            String[] testArray = new String[1];
+            testArray[0] = "HelloFromFlink a a a a a a a a b b b b b b b b";
+
+            for(int i = 0; i < testArray.length; i++) {
+                System.out.println("Sending: " + testArray[i]);
+                sender.send(SerializationUtils.serialize(testArray[i]), 0);
+            }
+
+            StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
+
+            DataStream<String> dataStream = env
+                    .addSource((SourceFunction)new DSPConnectorFactory().createSourceConnector(new DSPConnectorConfig.Builder("localhost", 9665)
+                            .withSocketType(SocketPool.SocketType.PULL)
+                            .withDSP("flink")
+                            .build()), TypeInformation.of(String.class))
+                    .flatMap(new Splitter());
+
+            dataStream.addSink((SinkFunction)new DSPConnectorFactory().createSinkConnector(new DSPConnectorConfig.Builder("localhost", 9656)
+                    .withDSP("flink")
+                    .withHWM(20)
+                    .withBufferConnectorString("buffer-test")
+                    .withTimeout(10000)
+                    .build()));
+            // Start netcat listener: 'nc -l 9755'
+            //DataStream<String> dataStream2 = env.socketTextStream("localhost", 9755);
+
+
+            //DataStream<Tuple2<String, Integer>> dataStream3 = dataStream.union(dataStream2).flatMap(new Splitter());
+
+            //dataStream3.addSink((SinkFunction)new DSPConnectorFactory().createSinkConnector(new DSPConnectorConfig.Builder("localhost", 9656)
+            //.withDSP("flink")
+            //.withTimeout(10000)
+            //.build()));
+
+            dataStream.print();
+
+            env.execute("Window WordCount");
+
+            //throw new Exception("test");
+        } catch (Exception ex) {
+            System.err.println(ex.toString() + ex.getStackTrace());
+        }
+    }
+
+    // ======== start test: pull based approach test 1 =======
+    @Test
+    public void pullBasedApproachComplexSink1() {
         try {
             ZMQ.Context context = ZMQ.context(1);
 
@@ -286,6 +341,7 @@ public class FlinkTests {
 
             dataStream3.addSink((SinkFunction)new DSPConnectorFactory().createSinkConnector(new DSPConnectorConfig.Builder("localhost", 9656)
                     .withDSP("flink")
+                    .withHWM(20)
                     .withTimeout(10000)
                     .build()));
 
@@ -338,6 +394,8 @@ public class FlinkTests {
             dataStream.print();
 
             env.execute("Window WordCount");
+
+            //throw new Exception("Test");
         } catch (Exception ex) {
             System.err.println(ex.toString() + ex.getStackTrace().toString());
         }

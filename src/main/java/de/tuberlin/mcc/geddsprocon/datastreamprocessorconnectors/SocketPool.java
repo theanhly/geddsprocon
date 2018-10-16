@@ -27,7 +27,7 @@ public class SocketPool {
 
 
     private volatile ConcurrentHashMap<String, ZMQ.Socket> sockets;
-    private volatile ZMQ.Context context;
+    private static volatile ZMQ.Context context;
 
     private SocketPool() {
         this.sockets = new ConcurrentHashMap<>();
@@ -136,7 +136,8 @@ public class SocketPool {
                 break;
             case ROUTER:
                 socket = this.context.socket(ZMQ.ROUTER);
-                //socket.setSendTimeOut(config.getTimeout());
+                socket.setRouterMandatory(true);
+                socket.setSendTimeOut(3000);
                 //socket.setSndHWM(config.getHwm());
                 socket.bind("tcp://"+  key);
                 break;
@@ -196,8 +197,8 @@ public class SocketPool {
             stopSocket(tuple.f0, tuple.f1);
 
         if(this.context != null) {
-            this.context.term();
-            this.context = null;
+            //this.context.term();
+            //this.context = null;
         }
     }
 

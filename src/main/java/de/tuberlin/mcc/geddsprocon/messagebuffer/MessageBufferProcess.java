@@ -63,7 +63,11 @@ public class MessageBufferProcess {
                     System.out.println("END received");
                     socket.send("END_SUCCESS");
                     break;
+                } else if (command.equals("MESSAGECOUNT")) {
+                    System.out.println("MESSAGECOUNT received");
+                    socket.send(Integer.toString(message.toArray().length));
                 } else {
+                    System.out.println("Unknown command received: " + command);
                     socket.send(command);
                 }
             }

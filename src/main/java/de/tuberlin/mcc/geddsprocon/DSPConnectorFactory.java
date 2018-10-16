@@ -31,7 +31,6 @@ public class DSPConnectorFactory<T extends Object> {
     public IDSPSourceConnector createSourceConnector(DSPConnectorConfig config) {
         try {
             //SocketPool.getInstance().createSockets(config.getSocketType() == SocketPool.SocketType.DEFAULT ? SocketPool.SocketType.REQ : SocketPool.SocketType.PULL, config);
-            MessageBuffer.getInstance().initiateBuffer(20);
             IDSPSourceConnector source = null;
             switch(config.getDSP()) {
                 case FLINK:
@@ -47,6 +46,7 @@ public class DSPConnectorFactory<T extends Object> {
             if(config.getSocketType() == SocketPool.SocketType.PULL) {
                 SocketPool.getInstance().createSockets(SocketPool.SocketType.PULL, config);
             } else if(config.getSocketType() == SocketPool.SocketType.DEALER || config.getSocketType() == SocketPool.SocketType.DEFAULT) {
+                MessageBuffer.getInstance().initiateBuffer(config);
                 SocketPool.getInstance().createSockets(SocketPool.SocketType.DEALER, config);
                 DSPManager.getInstance().startDSPRequesters(config);
             }
@@ -64,7 +64,7 @@ public class DSPConnectorFactory<T extends Object> {
             // if no sockettype is defined use the default socket type
             SocketPool.getInstance().createSockets(config.getSocketType() == SocketPool.SocketType.DEFAULT ? SocketPool.SocketType.ROUTER : SocketPool.SocketType.PUSH, config);
             // initiate the buffer. make it 20 for now for testing purposes. later get the buffer size depending on the hwm (?)
-            MessageBuffer.getInstance().initiateBuffer(20);
+            MessageBuffer.getInstance().initiateBuffer(config);
             IDSPSinkConnector sink = null;
             switch(config.getDSP()) {
                 case FLINK:

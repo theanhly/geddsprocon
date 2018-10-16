@@ -50,7 +50,8 @@ public class DSPRouter implements Runnable, IMessageBufferListener {
             if(ready.equals(DSPConnectorFactory.ConnectorType.PRIMARY)) {
                 System.out.println(DSPConnectorFactory.ConnectorType.PRIMARY + " message received");
                 if(!reply(address)) {
-                    reply();
+                    //reply();
+                    System.out.println("Message could not be sent.");
                 } else {
                     this.temporaryPrimary = null;
                 }

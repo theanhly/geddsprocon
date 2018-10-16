@@ -1,6 +1,7 @@
 package de.tuberlin.mcc.geddsprocon.messagebuffer;
 
 import com.google.common.base.Strings;
+import de.tuberlin.mcc.geddsprocon.DSPConnectorConfig;
 import de.tuberlin.mcc.geddsprocon.common.JavaProcessBuilder;
 import de.tuberlin.mcc.geddsprocon.tuple.Tuple2;
 import org.zeromq.ZMQ;
@@ -14,6 +15,7 @@ public class MessageBuffer {
     public static final String INIT_MESSAGE         = "INIT";
     public static final String WRITE_MESSAGE        = "WRITE";
     public static final String PEEKBUFFER_MESSAGE   = "PEEKBUFFER";
+    public static final String MESSAGECOUNT_MESSAGE = "MESSAGECOUNT";
     public static final String CLEARBUFFER_MESSAGE  = "CLEARBUFFER";
     public static final String END_MESSAGE          = "END";
 
@@ -30,32 +32,16 @@ public class MessageBuffer {
     private LinkedList<IMessageBufferListener> listener;
     private ZMQ.Socket bufferSocket;
     private final ZMQ.Context context = ZMQ.context(1);
+    private DSPConnectorConfig config;
+    private boolean init;
     //private final String connectionString;
 
     private MessageBuffer() {
         this.listener = new LinkedList<>();
 
+        this.init = false;
         this.bufferSocket = this.context.socket(ZMQ.REQ);
         this.bufferSocket.setReceiveTimeOut(5000);
-        String connectionString;
-        for(int i = 0; true; i++) {
-            connectionString = "ipc:///message-buffer-process-" + i;
-            this.bufferSocket.connect(connectionString);
-            this.bufferSocket.send(this.INIT_MESSAGE);
-            if(Strings.isNullOrEmpty(this.bufferSocket.recvStr())) {
-                try {
-                    JavaProcessBuilder.exec(MessageBufferProcess.class, connectionString);
-                    String reply = this.bufferSocket.recvStr();
-                    System.out.println(reply);
-                    assert(reply.equals("OK"));
-                    break;
-                } catch(Exception ex) {
-                    System.err.println("Starting message buffer process failed.");
-                    System.err.println(ex.toString());
-                }
-            } else
-                this.bufferSocket.disconnect(connectionString);
-        }
     }
 
     public void addListener(IMessageBufferListener listener) {
@@ -79,16 +65,96 @@ public class MessageBuffer {
      * initiate the buffer with the default size
      */
     public void initiateBuffer() {
-        initiateBuffer(this.bufferSize);
+        initiateBuffer(null);
     }
 
     /**
      * initiate the buffer. the buffer size determines the messages the buffer should hold
-     * @param bufferSize init buffer size
+     * @param config initiate buffer and buffer process with config
      */
-    public void initiateBuffer(int bufferSize) {
-        this.bufferSize = bufferSize;
-        this.buffer = new byte[this.bufferSize][];
+    public void initiateBuffer(DSPConnectorConfig config) {
+        if(config != null) {
+            this.bufferSize = config.getHwm();
+            //this.buffer = new byte[this.bufferSize][];
+
+        }
+
+
+        String connectionString;
+        for(int i = 0; true; i++) {
+            connectionString = Strings.isNullOrEmpty(config.getBufferConnectionString()) ? "ipc:///message-buffer-process-" + i : "ipc:///" + config.getBufferConnectionString();
+            this.bufferSocket.connect(connectionString);
+            this.bufferSocket.send(this.INIT_MESSAGE);
+            String reply = this.bufferSocket.recvStr();
+            if(Strings.isNullOrEmpty(reply)) {
+                try {
+                    JavaProcessBuilder.exec(MessageBufferProcess.class, connectionString);
+                    reply = this.bufferSocket.recvStr();
+                    System.out.println(reply);
+                    assert(reply.equals("OK"));
+                    break;
+                } catch(Exception ex) {
+                    System.err.println("Starting message buffer process failed.");
+                    System.err.println(ex.toString());
+                }
+            } else {
+                if(Strings.isNullOrEmpty(config.getBufferConnectionString()))
+                    this.bufferSocket.disconnect(connectionString);
+                else {
+                    assert(reply.equals("OK"));
+                    this.messages = 0;
+                    this.bufferSocket.send(this.MESSAGECOUNT_MESSAGE);
+                    //ZMsg messagesInBuffer = ZMsg.recvMsg(this.bufferSocket, ZMQ.DONTWAIT);
+                    //if(messagesInBuffer != null)
+                    //    this.messages = messagesInBuffer.toArray().length;
+                    this.messages = Integer.parseInt(this.bufferSocket.recvStr());
+
+                    System.out.println("Old MessageBuffer found. Message count: " + this.messages);
+                    break;
+                }
+            }
+        }
+        /*
+        synchronized (this.bufferLock) {
+            if(!init) {
+                String connectionString;
+                for(int i = 0; true; i++) {
+                    connectionString = Strings.isNullOrEmpty(config.getBufferConnectionString()) ? "ipc:///message-buffer-process-" + i : "ipc:///" + config.getBufferConnectionString();
+                    this.bufferSocket.connect(connectionString);
+                    this.bufferSocket.send(this.INIT_MESSAGE);
+                    String reply = this.bufferSocket.recvStr();
+                    if(Strings.isNullOrEmpty(reply)) {
+                        try {
+                            JavaProcessBuilder.exec(MessageBufferProcess.class, connectionString);
+                            reply = this.bufferSocket.recvStr();
+                            System.out.println(reply);
+                            assert(reply.equals("OK"));
+                            break;
+                        } catch(Exception ex) {
+                            System.err.println("Starting message buffer process failed.");
+                            System.err.println(ex.toString());
+                        }
+                    } else {
+                        if(Strings.isNullOrEmpty(config.getBufferConnectionString()))
+                            this.bufferSocket.disconnect(connectionString);
+                        else {
+                            assert(reply.equals("OK"));
+                            this.messages = 0;
+                            this.bufferSocket.send(this.MESSAGECOUNT_MESSAGE);
+                            //ZMsg messagesInBuffer = ZMsg.recvMsg(this.bufferSocket, ZMQ.DONTWAIT);
+                            //if(messagesInBuffer != null)
+                            //    this.messages = messagesInBuffer.toArray().length;
+                            this.messages = Integer.parseInt(this.bufferSocket.recvStr());
+
+                            System.out.println("Old MessageBuffer found. Message count: " + this.messages);
+                            break;
+                        }
+                    }
+                }
+
+                init = true;
+            }
+        }*/
     }
 
     /**

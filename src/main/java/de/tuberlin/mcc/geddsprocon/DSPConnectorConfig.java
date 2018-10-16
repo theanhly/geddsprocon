@@ -19,6 +19,7 @@ public class DSPConnectorConfig implements Serializable {
     private int timeout;
     private boolean transform;
     private String connectorType;
+    private String bufferConnectionString;
     private SocketPool.SocketType socketType;
 
     private DSPConnectorConfig() {
@@ -52,6 +53,8 @@ public class DSPConnectorConfig implements Serializable {
 
     public String getConncetorType() { return this.connectorType; }
 
+    public String getBufferConnectionString() { return this.bufferConnectionString; }
+
     public SocketPool.SocketType getSocketType() {
         return this.socketType;
     }
@@ -71,11 +74,12 @@ public class DSPConnectorConfig implements Serializable {
         private ArrayList<Tuple3<String, Integer, String>> requestAddresses;
         private DSPConnectorFactory.DataStreamProcessors dsp = null;
         private String host;
-        private int hwm = 1;
+        private int hwm = 1000;
         private int port;
         private int timeout = -1;
         private boolean transform = true;
         private String connectorType = DSPConnectorFactory.ConnectorType.PRIMARY;
+        private String bufferConnectionString = "";
         private SocketPool.SocketType socketType = SocketPool.SocketType.DEFAULT;
 
         public Builder() {
@@ -94,6 +98,11 @@ public class DSPConnectorConfig implements Serializable {
         @Deprecated
         public Builder withAddress(String host, int port) {
             this.addresses.add(new Tuple2<>(host,port));
+            return this;
+        }
+
+        public Builder withBufferConnectorString(String connectorString) {
+            this.bufferConnectionString = connectorString;
             return this;
         }
 
@@ -170,6 +179,7 @@ public class DSPConnectorConfig implements Serializable {
             config.hwm = this.hwm;
             config.connectorType = this.connectorType;
             config.socketType = this.socketType;
+            config.bufferConnectionString = this.bufferConnectionString;
             return config;
         }
     }
