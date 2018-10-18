@@ -4,6 +4,7 @@ import de.tuberlin.mcc.geddsprocon.DSPConnectorFactory;
 //import de.tuberlin.mcc.geddsprocon.tuple.*;
 
 import de.tuberlin.mcc.geddsprocon.DSPConnectorConfig;
+import de.tuberlin.mcc.geddsprocon.datastreamprocessorconnectors.SocketPool;
 import org.apache.flink.api.java.tuple.*;
 import org.apache.commons.lang.SerializationUtils;
 import org.apache.flink.api.common.functions.FlatMapFunction;
@@ -30,21 +31,6 @@ public class FlinkTests {
                 out.collect(new Tuple2<String, Integer>(word, 1));
             }
         }
-    }
-
-    @Test
-    public void serializerTest() {
-        Tuple4<String, Integer, Double, Boolean> test = new Tuple4<String, Integer, Double, Boolean>("test", 2, 0.2323123541, false);
-
-
-        byte[] testByteArr = SerializationUtils.serialize(test);
-
-        Tuple4 testObj = (Tuple4)SerializationUtils.deserialize(testByteArr);
-
-        Assert.assertEquals("test", testObj.f0);
-        Assert.assertEquals(2, testObj.f1);
-        Assert.assertEquals(0.2323123541, testObj.f2);
-        Assert.assertFalse((Boolean)testObj.f3);
     }
 
     @Test
@@ -257,9 +243,13 @@ public class FlinkTests {
     }
     // ======= End test ======
 
-    // ======== Additional addresses test =======
+    //
+    // NEW PULL BASED APPROACH
+    //
+
+    // ======== start test: pull based approach test 1 =======
     @Test
-    public void additionalAddressesTest() {
+    public void pullBasedApproachSimpleSink1() {
         try {
             ZMQ.Context context = ZMQ.context(1);
 
@@ -267,31 +257,148 @@ public class FlinkTests {
             System.out.println("Connecting to hello world server…");
 
             ZMQ.Socket sender = context.socket(ZMQ.PUSH);
-            sender.connect("tcp://localhost:9655");
+            sender.connect("tcp://localhost:9665");
+            String[] testArray = new String[1];
+            testArray[0] = "HelloFromFlink a a a a a a a a b b b b b b b b";
 
-            String testString =  "a b c d e f g h i j k l m n o p q r s t u v w x y z";
-
-            System.out.println("Sending: " + testString);
-            sender.send(SerializationUtils.serialize(testString), 0);
+            for(int i = 0; i < testArray.length; i++) {
+                System.out.println("Sending: " + testArray[i]);
+                sender.send(SerializationUtils.serialize(testArray[i]), 0);
+            }
 
             StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
 
-            DataStream<Tuple2<String, Integer>> dataStream = env
-                    .addSource((SourceFunction)new DSPConnectorFactory().createSourceConnector(new DSPConnectorConfig.Builder("localhost", 9655).withDSP("flink").build()), TypeInformation.of(String.class))
+            DataStream<String> dataStream = env
+                    .addSource((SourceFunction)new DSPConnectorFactory().createSourceConnector(new DSPConnectorConfig.Builder("localhost", 9665)
+                            .withSocketType(SocketPool.SocketType.PULL)
+                            .withDSP("flink")
+                            .build()), TypeInformation.of(String.class))
                     .flatMap(new Splitter());
 
             dataStream.addSink((SinkFunction)new DSPConnectorFactory().createSinkConnector(new DSPConnectorConfig.Builder("localhost", 9656)
                     .withDSP("flink")
-                    .withAddress("localhost", 9657)
+                    .withHWM(20)
+                    .withBufferConnectorString("buffer-test")
                     .withTimeout(10000)
-                    .withoutTransformation()
                     .build()));
+            // Start netcat listener: 'nc -l 9755'
+            //DataStream<String> dataStream2 = env.socketTextStream("localhost", 9755);
+
+
+            //DataStream<Tuple2<String, Integer>> dataStream3 = dataStream.union(dataStream2).flatMap(new Splitter());
+
+            //dataStream3.addSink((SinkFunction)new DSPConnectorFactory().createSinkConnector(new DSPConnectorConfig.Builder("localhost", 9656)
+            //.withDSP("flink")
+            //.withTimeout(10000)
+            //.build()));
+
+            dataStream.print();
+
+            env.execute("Window WordCount");
+
+            //throw new Exception("test");
+        } catch (Exception ex) {
+            System.err.println(ex.toString() + ex.getStackTrace());
+        }
+    }
+
+    // ======== start test: pull based approach test 1 =======
+    @Test
+    public void pullBasedApproachComplexSink1() {
+        try {
+            ZMQ.Context context = ZMQ.context(1);
+
+            //  Socket to talk to server
+            System.out.println("Connecting to hello world server…");
+
+            ZMQ.Socket sender = context.socket(ZMQ.PUSH);
+            sender.connect("tcp://localhost:9665");
+            String[] testArray = new String[5];
+            testArray[0] = "HelloFromFlink a a a a a a a a b b b b b b b b a a a a a b b b b";
+            testArray[1] = "c c c c a a a b b b";
+            testArray[2] = "a a a a d d d d";
+            testArray[3] = "e e e e e a a a b";
+            testArray[4] = "u u u m m m m m c c c";
+
+            for(int i = 0; i < testArray.length; i++) {
+                System.out.println("Sending: " + testArray[i]);
+                sender.send(SerializationUtils.serialize(testArray[i]), 0);
+            }
+
+            StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
+
+            DataStream<String> dataStream = env
+                    .addSource((SourceFunction)new DSPConnectorFactory().createSourceConnector(new DSPConnectorConfig.Builder("localhost", 9665)
+                            .withSocketType(SocketPool.SocketType.PULL)
+                            .withDSP("flink")
+                            .build()), TypeInformation.of(String.class));
+
+            // Start netcat listener: 'nc -l 9755'
+            DataStream<String> dataStream2 = env.socketTextStream("localhost", 9755);
+
+
+            DataStream<Tuple2<String, Integer>> dataStream3 = dataStream.union(dataStream2).flatMap(new Splitter());
+
+            dataStream3.addSink((SinkFunction)new DSPConnectorFactory().createSinkConnector(new DSPConnectorConfig.Builder("localhost", 9656)
+                    .withDSP("flink")
+                    .withHWM(20)
+                    .withTimeout(10000)
+                    .build()));
+
+            dataStream3.print();
+
+            env.execute("Window WordCount");
+        } catch (Exception ex) {
+            System.err.println(ex.toString() + ex.getStackTrace());
+        }
+    }
+
+    @Test
+    public void pullBasedApproachPrimarySource1() {
+        try {
+            StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
+
+            DataStream<Tuple2<String, Integer>> dataStream = env
+                    .addSource((SourceFunction)new DSPConnectorFactory<>().createSourceConnector(new DSPConnectorConfig.Builder()
+                            .withDSP("flink")
+                            .withRequestAddress("localhost", 9656, DSPConnectorFactory.ConnectorType.PRIMARY)
+                            .withRequestAddress("localhost", 9666, DSPConnectorFactory.ConnectorType.PRIMARY)
+                            .build()), TypeInfoParser.parse("Tuple2<String,Integer>"))
+                    .keyBy("f0")
+                    .timeWindow(Time.seconds(5))
+                    .sum("f1");
 
             dataStream.print();
 
             env.execute("Window WordCount");
         } catch (Exception ex) {
-            System.err.println(ex.getStackTrace());
+            System.err.println(ex.toString() + ex.getStackTrace().toString());
         }
     }
+
+    @Test
+    public void pullBasedApproachSecondarySource1() {
+        try {
+            StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
+
+            DataStream<Tuple2<String, Integer>> dataStream = env
+                    .addSource((SourceFunction)new DSPConnectorFactory<>().createSourceConnector(new DSPConnectorConfig.Builder()
+                            .withDSP("flink")
+                            .withRequestAddress("localhost", 9656, DSPConnectorFactory.ConnectorType.SECONDARY)
+                            .withRequestAddress("localhost", 9666, DSPConnectorFactory.ConnectorType.SECONDARY)
+                            .build()), TypeInfoParser.parse("Tuple2<String,Integer>"))
+                    .keyBy("f0")
+                    .timeWindow(Time.seconds(5))
+                    .sum("f1");
+
+            dataStream.print();
+
+            env.execute("Window WordCount");
+
+            //throw new Exception("Test");
+        } catch (Exception ex) {
+            System.err.println(ex.toString() + ex.getStackTrace().toString());
+        }
+    }
+    // ======== end test: pull based approach test 1 =======
 }
