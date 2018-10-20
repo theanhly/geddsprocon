@@ -45,9 +45,9 @@ public class DSPConnectorFactory<T extends Object> {
 
             if(config.getSocketType() == SocketPool.SocketType.PULL) {
                 SocketPool.getInstance().createSockets(SocketPool.SocketType.PULL, config);
-            } else if(config.getSocketType() == SocketPool.SocketType.DEALER || config.getSocketType() == SocketPool.SocketType.DEFAULT) {
-                MessageBuffer.getInstance().initiateBuffer(config);
-                SocketPool.getInstance().createSockets(SocketPool.SocketType.DEALER, config);
+            } else if(config.getSocketType() == SocketPool.SocketType.REQ || config.getSocketType() == SocketPool.SocketType.DEFAULT) {
+                MessageBuffer.getInstance().initiateBuffer(config, false);
+                SocketPool.getInstance().createSockets(SocketPool.SocketType.REQ, config);
                 DSPManager.getInstance().startDSPRequesters(config);
             }
 

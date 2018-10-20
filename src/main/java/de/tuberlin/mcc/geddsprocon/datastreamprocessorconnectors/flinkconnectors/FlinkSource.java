@@ -77,8 +77,6 @@ public class FlinkSource implements SourceFunction<Serializable>, IDSPSourceConn
     @Override
     public synchronized ZMsg flush(ZMsg messages) {
         for(ZFrame frame : messages) {
-            //if(bytes.length == 1 && frame[0] == 0)
-            //    break;
 
             Serializable message = (Serializable)SerializationUtils.deserialize(frame.getData());
 

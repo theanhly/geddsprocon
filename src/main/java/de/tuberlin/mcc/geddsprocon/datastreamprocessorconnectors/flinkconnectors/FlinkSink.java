@@ -20,8 +20,7 @@ import org.zeromq.ZMsg;
 
 import java.io.Serializable;
 
-// TODO: consider using ListCheckpointed instead
-public class FlinkSink extends RichSinkFunction<Serializable> implements IDSPSinkConnector, IMessageBufferFunction, CheckpointedFunction {
+public class FlinkSink extends RichSinkFunction<Serializable> implements IDSPSinkConnector, IMessageBufferFunction {
     // most current host which the sink can send to
     private String host;
     private int port;
@@ -59,7 +58,6 @@ public class FlinkSink extends RichSinkFunction<Serializable> implements IDSPSin
         while(MessageBuffer.getInstance().isFull()) {}
 
         MessageBuffer.getInstance().writeBuffer(byteMessage);
-        System.out.println("Written to buffer");
     }
 
     /**
@@ -71,7 +69,6 @@ public class FlinkSink extends RichSinkFunction<Serializable> implements IDSPSin
         SocketPool.getInstance().stopSockets(this.config);
     }
 
-    // BufferFunction
     @Override
     public IMessageBufferFunction getBufferFunction() {
         return this;
@@ -79,46 +76,6 @@ public class FlinkSink extends RichSinkFunction<Serializable> implements IDSPSin
 
     @Override
     public ZMsg flush(ZMsg message) {
-        /*ZMsg messages = new ZMsg();
-        for(byte[] byteMessage : buffer) {
-            if(byteMessage.length == 1 && byteMessage[0] == 0)
-                break;
-
-            messages.add(byteMessage);
-        }*/
-
         return message;
-    }
-
-    @Override
-    public synchronized void snapshotState(FunctionSnapshotContext context) throws Exception {
-        this.checkpointedState.clear();
-        byte[][] buffer;
-
-        buffer = MessageBuffer.getInstance().getBuffer();
-        for (byte[] bytes : buffer) {
-            if(bytes.length == 1 && bytes[0] == (byte)0)
-                break;
-
-            this.checkpointedState.add(bytes);
-        }
-    }
-
-    @Override
-    public synchronized void initializeState(FunctionInitializationContext context) throws Exception {
-        ListStateDescriptor<byte[]> descriptor =
-                new ListStateDescriptor<>(
-                        "message buffer elements",
-                        TypeInformation.of(new TypeHint<byte[]>() {}));
-
-        this.checkpointedState = context.getOperatorStateStore().getListState(descriptor);
-
-        if (context.isRestored()) {
-            MessageBuffer.getInstance().clearBuffer();
-
-            for (byte[] element : this.checkpointedState.get()) {
-                MessageBuffer.getInstance().writeBuffer((element));
-            }
-        }
     }
 }
