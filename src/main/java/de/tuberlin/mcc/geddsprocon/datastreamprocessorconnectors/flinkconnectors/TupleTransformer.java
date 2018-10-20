@@ -3,6 +3,11 @@ package de.tuberlin.mcc.geddsprocon.datastreamprocessorconnectors.flinkconnector
 
 public class TupleTransformer {
 
+    /**
+     * Transform an intermediate tuple to a Flink tuple
+     * @param tuple Immediate tuple
+     * @return Flink tuple
+     */
     public static org.apache.flink.api.java.tuple.Tuple transformFromIntermediateTuple(de.tuberlin.mcc.geddsprocon.tuple.Tuple tuple) {
 
         int arity = tuple.getArity();
@@ -44,6 +49,11 @@ public class TupleTransformer {
         return resultTuple;
     }
 
+    /**
+     * Transform a Flink tuple to an intermediate tuple
+     * @param tuple Flink tuple
+     * @return Intermediate tuple
+     */
     public static de.tuberlin.mcc.geddsprocon.tuple.Tuple transformToIntermediateTuple(org.apache.flink.api.java.tuple.Tuple tuple) {
 
         int arity = tuple.getArity();

@@ -3,16 +3,13 @@ package de.tuberlin.mcc.geddsprocon.datastreamprocessorconnectors;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
-import java.util.HashMap;
 import java.util.concurrent.ConcurrentHashMap;
 
 import de.tuberlin.mcc.geddsprocon.DSPConnectorConfig;
-import de.tuberlin.mcc.geddsprocon.tuple.Tuple;
 import de.tuberlin.mcc.geddsprocon.tuple.Tuple2;
 import de.tuberlin.mcc.geddsprocon.tuple.Tuple3;
 import org.apache.commons.lang.NullArgumentException;
 import org.apache.commons.lang.SerializationUtils;
-import org.zeromq.ZContext;
 import org.zeromq.ZMQ;
 import org.zeromq.ZMsg;
 
@@ -114,7 +111,6 @@ public class SocketPool {
             case REP:
                 socket = this.context.socket(ZMQ.REP);
                 socket.setSendTimeOut(config.getTimeout());
-                socket.setHWM(config.getHwm());
                 socket.setImmediate(true);
                 socket.bind("tcp://"+  key);
                 break;
@@ -122,45 +118,39 @@ public class SocketPool {
                 socket = this.context.socket(ZMQ.REQ);
                 // hard code timeout
                 socket.setReceiveTimeOut(config.getTimeout());
-                socket.setHWM(config.getHwm());
                 socket.setImmediate(true);
+                socket.setReqRelaxed(true);
+                socket.setSndHWM(1);
                 socket.connect("tcp://"+  key);
                 break;
             case DEALER:
                 socket = this.context.socket(ZMQ.DEALER);
                 // hard code timeout
-                //socket.setReceiveTimeOut(5000);
-                socket.setHWM(config.getHwm());
+                socket.setReceiveTimeOut(config.getTimeout());
+                socket.setSndHWM(1);
                 socket.setImmediate(true);
                 socket.connect("tcp://"+  key);
                 break;
             case ROUTER:
                 socket = this.context.socket(ZMQ.ROUTER);
                 socket.setRouterMandatory(true);
+                socket.setRcvHWM(1);
                 socket.setSendTimeOut(3000);
-                //socket.setSndHWM(config.getHwm());
                 socket.bind("tcp://"+  key);
                 break;
         }
-
-        // set hwm
-        //socket.setHWM(config.getHwm());
 
         this.sockets.put(key, socket);
 
         return socket;
     }
 
-    public synchronized ZMsg receiveSocket(String host, int port, int bla) {
-        ZMQ.Socket socket = getOrCreateSocket(host, port);
-        // non blocking receive needed
-        //return socket.recv(ZMQ.DONTWAIT);
-
-        socket.send("1", 0);
-
-        return ZMsg.recvMsg(socket);
-    }
-
+    /**
+     * Used by input operators to receive data
+     * @param host Host name
+     * @param port Port number
+     * @return returns received bytes
+     */
     public synchronized byte[] receiveSocket(String host, int port) {
         ZMQ.Socket socket = getOrCreateSocket(host, port);
         // non blocking receive needed
@@ -197,8 +187,8 @@ public class SocketPool {
             stopSocket(tuple.f0, tuple.f1);
 
         if(this.context != null) {
-            //this.context.term();
-            //this.context = null;
+            this.context.term();
+            this.context = null;
         }
     }
 

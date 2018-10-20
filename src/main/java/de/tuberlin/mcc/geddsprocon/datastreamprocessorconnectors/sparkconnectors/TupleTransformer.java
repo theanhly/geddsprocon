@@ -3,6 +3,11 @@ package de.tuberlin.mcc.geddsprocon.datastreamprocessorconnectors.sparkconnector
 
 public class TupleTransformer {
 
+    /**
+     * Transform the immediate tuple to a Spark tuple (scala.Product)
+     * @param tuple Immediate tuple
+     * @return Spark tuple
+     */
     public static scala.Product transformFromIntermediateTuple(de.tuberlin.mcc.geddsprocon.tuple.Tuple tuple) {
         int arity = tuple.getArity();
         scala.Product resultTuple = null;
@@ -41,6 +46,11 @@ public class TupleTransformer {
         return resultTuple;
     }
 
+    /**
+     * Transform a Spark tuple (scala.Product) to an intermediate tuple
+     * @param tuple Spark tuple
+     * @return Intermediate tuple
+     */
     public static de.tuberlin.mcc.geddsprocon.tuple.Tuple transformToIntermediateTuple(scala.Product tuple) {
 
         int arity = tuple.productArity();

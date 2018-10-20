@@ -20,6 +20,8 @@ public class DSPRouter implements Runnable, IMessageBufferListener {
     private volatile HashSet<ZFrame> endpointSet;
     private final ZMQ.Socket socket;
     private ZFrame temporaryPrimary;
+    private boolean resendPrevBuffer;
+    private int lastReceivedMessageNumber;
 
     public DSPRouter(String host, int port, IMessageBufferFunction bufferFunction) {
         this.host = host;
@@ -28,36 +30,40 @@ public class DSPRouter implements Runnable, IMessageBufferListener {
         this.endpointQueue = new LinkedList<>();
         this.endpointSet = new HashSet<>();
         this.socket = SocketPool.getInstance().getOrCreateSocket(this.host, this.port);
+        this.resendPrevBuffer = false;
+        this.lastReceivedMessageNumber = -1;
     }
 
     @Override
     public void run() {
+
+
         while(true) {
 
             ZMsg msg = ZMsg.recvMsg(this.socket);
-            System.out.println("message received");
 
             //  First frame is address
             ZFrame address = msg.pop();
 
             //  Second frame is empty in a REQ socket. Second frame of DEALER socket is not empty
-            //String empty = new String(msg.pop().getData());
-            //assert (empty.length() == 0);
+            String empty = new String(msg.pop().getData());
+            assert (empty.length() == 0);
 
             String ready = new String(msg.pop().getData());
             assert(ready.length() > 0);
 
+            this.lastReceivedMessageNumber = Math.max(Integer.parseInt(msg.pop().toString()), this.lastReceivedMessageNumber);
+
             if(ready.equals(DSPConnectorFactory.ConnectorType.PRIMARY)) {
-                System.out.println(DSPConnectorFactory.ConnectorType.PRIMARY + " message received");
-                if(!reply(address)) {
-                    //reply();
-                    System.out.println("Message could not be sent.");
+                //System.out.println(DSPConnectorFactory.ConnectorType.PRIMARY + " message received");
+
+                if(reply(address)) {
+                    this.temporaryPrimary = address;
                 } else {
-                    this.temporaryPrimary = null;
+                    System.out.println("Message could not be sent.");
                 }
             } else if(ready.equals(DSPConnectorFactory.ConnectorType.SECONDARY)) {
-                System.out.println(DSPConnectorFactory.ConnectorType.SECONDARY +" message received");
-                // critical
+                //System.out.println(DSPConnectorFactory.ConnectorType.SECONDARY +" message received");
 
                 if(this.temporaryPrimary != null && this.temporaryPrimary.hasData() && this.temporaryPrimary.getData().equals(address.getData()))
                     reply(address);
@@ -94,17 +100,30 @@ public class DSPRouter implements Runnable, IMessageBufferListener {
         message.add(address);
 
         // DEALER socket doesn't need an empty second frame
-        //message.add("");
+        message.add("");
 
-        while(MessageBuffer.getInstance().isEmpty()) {}
+        boolean resendPrevBuffer = false;
 
-        // TODO: critical error. the buffer is flushed but it might be the case that in the meantime new values could have been written into the buffer.
+        long currentMessages = MessageBuffer.getInstance().getSentMessages();
+
+        if(currentMessages > 1 && (this.lastReceivedMessageNumber + 1 != currentMessages || (this.lastReceivedMessageNumber == MessageBuffer.RESETMESSAGENUMBER && currentMessages != 1))) {
+            resendPrevBuffer = true;
+        }
+
+        if(!resendPrevBuffer && MessageBuffer.getInstance().isEmpty()) {
+            message.add("");
+            return message.send(this.socket);
+        }
+
         Object bufferLock = MessageBuffer.getInstance().getBufferLock();
         synchronized (bufferLock) {
-            message.append(MessageBuffer.getInstance().flushBuffer(this.bufferFunction, false));
+            message.append(MessageBuffer.getInstance().flushBuffer(this.bufferFunction, false, resendPrevBuffer));
             System.out.println("Sending message " + message.toString());
             if(message.send(this.socket)) {
-                MessageBuffer.getInstance().clearBuffer();
+                // only clear buffer after sending has been successful and the previous buffer wasn't sent
+                if(!resendPrevBuffer)
+                    MessageBuffer.getInstance().clearBuffer();
+
                 return true;
             } else {
                 System.err.println("Sending not successful.");
@@ -120,6 +139,7 @@ public class DSPRouter implements Runnable, IMessageBufferListener {
     public void bufferIsFullEvent() {
         while(this.endpointQueue.isEmpty() && MessageBuffer.getInstance().isFull()) {}
 
+        //this.resendPrevBuffer = true;
         System.out.println("Buffer event");
         if(MessageBuffer.getInstance().isFull())
             reply();
