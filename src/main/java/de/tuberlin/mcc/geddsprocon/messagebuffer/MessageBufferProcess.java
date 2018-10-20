@@ -75,7 +75,7 @@ public class MessageBufferProcess {
                     System.out.println("MESSAGECOUNT received");
                     socket.send(Integer.toString(message.toArray().length));
                 } else if (command.equals("SENTMESSAGES")) {
-                    System.out.println("SENTMESSAGES received");
+                    //System.out.println("SENTMESSAGES received");
                     socket.send(Long.toString(sentMessages));
                 } else {
                     System.out.println("Unknown command received: " + command);

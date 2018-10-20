@@ -1,15 +1,14 @@
 package de.tuberlin.mcc.geddsprocon.datastreamprocessorconnectors.sparkconnectors;
 
 import de.tuberlin.mcc.geddsprocon.DSPConnectorConfig;
+import de.tuberlin.mcc.geddsprocon.DSPConnectorFactory;
 import de.tuberlin.mcc.geddsprocon.datastreamprocessorconnectors.IDSPSourceConnector;
 import de.tuberlin.mcc.geddsprocon.datastreamprocessorconnectors.SocketPool;
 import de.tuberlin.mcc.geddsprocon.messagebuffer.IMessageBufferFunction;
-import de.tuberlin.mcc.geddsprocon.messagebuffer.MessageBuffer;
 import org.apache.commons.lang.SerializationUtils;
 import org.apache.spark.storage.StorageLevel;
 import org.apache.spark.streaming.receiver.Receiver;
 import org.zeromq.ZFrame;
-import org.zeromq.ZMQ;
 import org.zeromq.ZMsg;
 
 import java.io.Serializable;
@@ -19,17 +18,16 @@ public class SparkSource extends Receiver<Serializable> implements IDSPSourceCon
     private String host;
     private int port;
     private boolean transform;
-    private volatile boolean isRunning = true;
     private final DSPConnectorConfig config;
-    private final String connectorType;
+    private String messageBufferConnectionString;
 
-    public SparkSource (DSPConnectorConfig config) {
+    public SparkSource (DSPConnectorConfig config, String messageBufferConnectionString) {
         super(StorageLevel.MEMORY_AND_DISK_2());
+        this.messageBufferConnectionString = messageBufferConnectionString;
         this.config = config;
         this.host = this.config.getHost();
         this.port = this.config.getPort();
         this.transform = this.config.getTransform();
-        this.connectorType = this.config.getConncetorType();
     }
 
     @Override
@@ -49,16 +47,6 @@ public class SparkSource extends Receiver<Serializable> implements IDSPSourceCon
         try {
             byte[] byteMessage;
 
-            /*while (!isStopped() && (byteMessage = receiveData(this.host, this.port)) != null) {
-
-                Serializable message = (Serializable)SerializationUtils.deserialize(byteMessage);
-
-                if(message instanceof de.tuberlin.mcc.geddsprocon.tuple.Tuple && transform)
-                    message = (Serializable)TupleTransformer.transformFromIntermediateTuple((de.tuberlin.mcc.geddsprocon.tuple.Tuple)message);
-
-                store(message);
-            }*/
-
             while (!isStopped()) {
                 if(config.getSocketType() == SocketPool.SocketType.PULL) {
                     while((byteMessage = receiveData(this.host, this.port)) != null) {
@@ -70,8 +58,8 @@ public class SparkSource extends Receiver<Serializable> implements IDSPSourceCon
                         store(message);
                     }
                 } else if (config.getSocketType() == SocketPool.SocketType.REQ || config.getSocketType() == SocketPool.SocketType.DEFAULT) {
-                    if(!MessageBuffer.getInstance().isEmpty()) {
-                        MessageBuffer.getInstance().flushBuffer(this);
+                    if(!DSPConnectorFactory.getInstance().getBuffer(this.messageBufferConnectionString).isEmpty()) {
+                        DSPConnectorFactory.getInstance().getBuffer(this.messageBufferConnectionString).flushBuffer(this);
                     }
                 }
             }
@@ -89,8 +77,6 @@ public class SparkSource extends Receiver<Serializable> implements IDSPSourceCon
     @Override
     public synchronized ZMsg flush(ZMsg messages) {
         for(ZFrame frame : messages) {
-            //if(frame.length == 1 && bytes[0] == 0)
-            //    break;
 
             Serializable message = (Serializable)SerializationUtils.deserialize(frame.getData());
 

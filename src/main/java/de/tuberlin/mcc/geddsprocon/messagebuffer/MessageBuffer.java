@@ -3,11 +3,9 @@ package de.tuberlin.mcc.geddsprocon.messagebuffer;
 import com.google.common.base.Strings;
 import de.tuberlin.mcc.geddsprocon.DSPConnectorConfig;
 import de.tuberlin.mcc.geddsprocon.common.JavaProcessBuilder;
-import de.tuberlin.mcc.geddsprocon.tuple.Tuple2;
 import org.zeromq.ZMQ;
 import org.zeromq.ZMsg;
 
-import java.util.Arrays;
 import java.util.LinkedList;
 
 public class MessageBuffer {
@@ -23,12 +21,6 @@ public class MessageBuffer {
     public static final String CLEARBUFFER_MESSAGE      = "CLEARBUFFER";
     public static final String END_MESSAGE              = "END";
 
-    private static MessageBuffer ourInstance = new MessageBuffer();
-
-    public static MessageBuffer getInstance() {
-        return ourInstance;
-    }
-
     private final Object bufferLock = new Object();
     private int bufferSize = 1000;
     private byte[][] buffer;
@@ -38,7 +30,7 @@ public class MessageBuffer {
     private final ZMQ.Context context = ZMQ.context(1);
     private boolean init;
 
-    private MessageBuffer() {
+    public MessageBuffer() {
         this.listener = new LinkedList<>();
 
         this.init = false;
@@ -66,8 +58,8 @@ public class MessageBuffer {
     /**
      * Initiate the buffer with the default values
      */
-    public void initiateBuffer(DSPConnectorConfig config) {
-        initiateBuffer(config, true);
+    public String initiateBuffer(DSPConnectorConfig config) {
+        return initiateBuffer(config, true);
     }
 
     /**
@@ -75,7 +67,7 @@ public class MessageBuffer {
      * @param config initiate buffer and buffer process with config
      * @param addSentMessagesFrame determines if a message id frame should be added. Unnecessary if the buffer is in an input operator.
      */
-    public void initiateBuffer(DSPConnectorConfig config, boolean addSentMessagesFrame) {
+    public String initiateBuffer(DSPConnectorConfig config, boolean addSentMessagesFrame) {
         if(config != null) {
             this.bufferSize = config.getHwm();
 
@@ -112,6 +104,8 @@ public class MessageBuffer {
                 }
             }
         }
+
+        return connectionString;
     }
 
     /**

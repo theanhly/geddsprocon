@@ -58,13 +58,13 @@ public class FlinkTests {
             StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
 
             DataStream<String> dataStream = env
-                    .addSource((SourceFunction)new DSPConnectorFactory().createSourceConnector(new DSPConnectorConfig.Builder("localhost", 9665)
+                    .addSource((SourceFunction)DSPConnectorFactory.getInstance().createSourceConnector(new DSPConnectorConfig.Builder("localhost", 9665)
                             .withSocketType(SocketPool.SocketType.PULL)
                             .withDSP("flink")
                             .build()), TypeInformation.of(String.class))
                     .flatMap(new Splitter());
 
-            dataStream.addSink((SinkFunction)new DSPConnectorFactory().createSinkConnector(new DSPConnectorConfig.Builder("localhost", 9656)
+            dataStream.addSink((SinkFunction)DSPConnectorFactory.getInstance().createSinkConnector(new DSPConnectorConfig.Builder("localhost", 9656)
                     .withDSP("flink")
                     .withHWM(20)
                     //.withBufferConnectorString("buffer-test")
@@ -106,7 +106,7 @@ public class FlinkTests {
             StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
 
             DataStream<String> dataStream = env
-                    .addSource((SourceFunction)new DSPConnectorFactory().createSourceConnector(new DSPConnectorConfig.Builder("localhost", 9665)
+                    .addSource((SourceFunction)DSPConnectorFactory.getInstance().createSourceConnector(new DSPConnectorConfig.Builder("localhost", 9665)
                             .withSocketType(SocketPool.SocketType.PULL)
                             .withDSP("flink")
                             .build()), TypeInformation.of(String.class));
@@ -117,7 +117,7 @@ public class FlinkTests {
 
             DataStream<Tuple2<String, Integer>> dataStream3 = dataStream.union(dataStream2).flatMap(new Splitter());
 
-            dataStream3.addSink((SinkFunction)new DSPConnectorFactory().createSinkConnector(new DSPConnectorConfig.Builder("localhost", 9656)
+            dataStream3.addSink((SinkFunction)DSPConnectorFactory.getInstance().createSinkConnector(new DSPConnectorConfig.Builder("localhost", 9656)
                     .withDSP("flink")
                     .withHWM(20)
                     .withTimeout(10000)
@@ -137,7 +137,7 @@ public class FlinkTests {
             StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
 
             DataStream<Tuple2<String, Integer>> dataStream = env
-                    .addSource((SourceFunction)new DSPConnectorFactory<>().createSourceConnector(new DSPConnectorConfig.Builder()
+                    .addSource((SourceFunction)DSPConnectorFactory.getInstance().createSourceConnector(new DSPConnectorConfig.Builder()
                             .withDSP("flink")
                             .withRequestAddress("localhost", 9656, DSPConnectorFactory.ConnectorType.PRIMARY)
                             .withRequestAddress("localhost", 9666, DSPConnectorFactory.ConnectorType.PRIMARY)
@@ -160,7 +160,7 @@ public class FlinkTests {
             StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
 
             DataStream<Tuple2<String, Integer>> dataStream = env
-                    .addSource((SourceFunction)new DSPConnectorFactory<>().createSourceConnector(new DSPConnectorConfig.Builder()
+                    .addSource((SourceFunction)DSPConnectorFactory.getInstance().createSourceConnector(new DSPConnectorConfig.Builder()
                             .withDSP("flink")
                             .withRequestAddress("localhost", 9656, DSPConnectorFactory.ConnectorType.SECONDARY)
                             .withRequestAddress("localhost", 9666, DSPConnectorFactory.ConnectorType.SECONDARY)

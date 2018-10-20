@@ -91,13 +91,7 @@ public class DSPConnectorConfig implements Serializable {
             this.addresses = new ArrayList<>();
             this.requestAddresses = new ArrayList<>();
             if(!Strings.isNullOrEmpty(this.host) && this.port > 0)
-                withAddress(this.host, this.port);
-        }
-
-        @Deprecated
-        public Builder withAddress(String host, int port) {
-            this.addresses.add(new Tuple2<>(host,port));
-            return this;
+                this.addresses.add(new Tuple2<>(host,port));
         }
 
         /**

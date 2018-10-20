@@ -1,6 +1,7 @@
 package de.tuberlin.mcc.geddsprocon.datastreamprocessorconnectors.flinkconnectors;
 
 import de.tuberlin.mcc.geddsprocon.DSPConnectorConfig;
+import de.tuberlin.mcc.geddsprocon.DSPConnectorFactory;
 import de.tuberlin.mcc.geddsprocon.datastreamprocessorconnectors.IDSPSourceConnector;
 import de.tuberlin.mcc.geddsprocon.datastreamprocessorconnectors.SocketPool;
 import de.tuberlin.mcc.geddsprocon.messagebuffer.IMessageBufferFunction;
@@ -21,9 +22,11 @@ public class FlinkSource implements SourceFunction<Serializable>, IDSPSourceConn
     private final DSPConnectorConfig config;
     private final String connectorType;
     private SourceContext<Serializable> ctx;
+    private String messageBufferConnectionString;
 
-    public FlinkSource(DSPConnectorConfig config) {
+    public FlinkSource(DSPConnectorConfig config, String messageBufferConnectionString) {
         this.config = config;
+        this.messageBufferConnectionString = messageBufferConnectionString;
         this.host = this.config.getHost();
         this.port = this.config.getPort();
         this.transform = this.config.getTransform();
@@ -50,9 +53,9 @@ public class FlinkSource implements SourceFunction<Serializable>, IDSPSourceConn
                     ctx.collect(message);
                 }
             } else if(config.getSocketType() == SocketPool.SocketType.REQ || config.getSocketType() == SocketPool.SocketType.DEFAULT) {
-                if(!MessageBuffer.getInstance().isEmpty()) {
+                if(!DSPConnectorFactory.getInstance().getBuffer(this.messageBufferConnectionString).isEmpty()) {
                     this.ctx = ctx;
-                    MessageBuffer.getInstance().flushBuffer(this);
+                    DSPConnectorFactory.getInstance().getBuffer(this.messageBufferConnectionString).flushBuffer(this);
                 }
             }
         }

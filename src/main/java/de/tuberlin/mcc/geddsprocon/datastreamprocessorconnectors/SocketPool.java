@@ -120,7 +120,7 @@ public class SocketPool {
                 socket.setReceiveTimeOut(config.getTimeout());
                 socket.setImmediate(true);
                 socket.setReqRelaxed(true);
-                socket.setSndHWM(1);
+                socket.setHWM(0);
                 socket.connect("tcp://"+  key);
                 break;
             case DEALER:
@@ -129,13 +129,14 @@ public class SocketPool {
                 socket.setReceiveTimeOut(config.getTimeout());
                 socket.setSndHWM(1);
                 socket.setImmediate(true);
+                socket.setHWM(0);
                 socket.connect("tcp://"+  key);
                 break;
             case ROUTER:
                 socket = this.context.socket(ZMQ.ROUTER);
                 socket.setRouterMandatory(true);
-                socket.setRcvHWM(1);
-                socket.setSendTimeOut(3000);
+                socket.setSendTimeOut(config.getTimeout());
+                socket.setHWM(0);
                 socket.bind("tcp://"+  key);
                 break;
         }

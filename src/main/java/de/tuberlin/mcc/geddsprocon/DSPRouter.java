@@ -22,11 +22,13 @@ public class DSPRouter implements Runnable, IMessageBufferListener {
     private ZFrame temporaryPrimary;
     private boolean resendPrevBuffer;
     private int lastReceivedMessageNumber;
+    private String messageBufferConnectionString;
 
-    public DSPRouter(String host, int port, IMessageBufferFunction bufferFunction) {
+    public DSPRouter(String host, int port, IMessageBufferFunction bufferFunction, String messageBufferConnectionString) {
         this.host = host;
         this.port = port;
         this.bufferFunction = bufferFunction;
+        this.messageBufferConnectionString = messageBufferConnectionString;
         this.endpointQueue = new LinkedList<>();
         this.endpointSet = new HashSet<>();
         this.socket = SocketPool.getInstance().getOrCreateSocket(this.host, this.port);
@@ -104,25 +106,25 @@ public class DSPRouter implements Runnable, IMessageBufferListener {
 
         boolean resendPrevBuffer = false;
 
-        long currentMessages = MessageBuffer.getInstance().getSentMessages();
+        long currentMessages = DSPConnectorFactory.getInstance().getBuffer(this.messageBufferConnectionString).getSentMessages();
 
         if(currentMessages > 1 && (this.lastReceivedMessageNumber + 1 != currentMessages || (this.lastReceivedMessageNumber == MessageBuffer.RESETMESSAGENUMBER && currentMessages != 1))) {
             resendPrevBuffer = true;
         }
 
-        if(!resendPrevBuffer && MessageBuffer.getInstance().isEmpty()) {
+        if(!resendPrevBuffer && DSPConnectorFactory.getInstance().getBuffer(this.messageBufferConnectionString).isEmpty()) {
             message.add("");
             return message.send(this.socket);
         }
 
-        Object bufferLock = MessageBuffer.getInstance().getBufferLock();
+        Object bufferLock = DSPConnectorFactory.getInstance().getBuffer(this.messageBufferConnectionString).getBufferLock();
         synchronized (bufferLock) {
-            message.append(MessageBuffer.getInstance().flushBuffer(this.bufferFunction, false, resendPrevBuffer));
+            message.append(DSPConnectorFactory.getInstance().getBuffer(this.messageBufferConnectionString).flushBuffer(this.bufferFunction, false, resendPrevBuffer));
             System.out.println("Sending message " + message.toString());
             if(message.send(this.socket)) {
                 // only clear buffer after sending has been successful and the previous buffer wasn't sent
                 if(!resendPrevBuffer)
-                    MessageBuffer.getInstance().clearBuffer();
+                    DSPConnectorFactory.getInstance().getBuffer(this.messageBufferConnectionString).clearBuffer();
 
                 return true;
             } else {
@@ -137,11 +139,11 @@ public class DSPRouter implements Runnable, IMessageBufferListener {
      */
     @Override
     public void bufferIsFullEvent() {
-        while(this.endpointQueue.isEmpty() && MessageBuffer.getInstance().isFull()) {}
+        while(this.endpointQueue.isEmpty() && DSPConnectorFactory.getInstance().getBuffer(this.messageBufferConnectionString).isFull()) {}
 
         //this.resendPrevBuffer = true;
         System.out.println("Buffer event");
-        if(MessageBuffer.getInstance().isFull())
+        if(DSPConnectorFactory.getInstance().getBuffer(this.messageBufferConnectionString).isFull())
             reply();
     }
 }

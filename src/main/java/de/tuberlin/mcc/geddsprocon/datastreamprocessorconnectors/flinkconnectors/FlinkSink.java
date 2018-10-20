@@ -1,6 +1,7 @@
 package de.tuberlin.mcc.geddsprocon.datastreamprocessorconnectors.flinkconnectors;
 
 import de.tuberlin.mcc.geddsprocon.DSPConnectorConfig;
+import de.tuberlin.mcc.geddsprocon.DSPConnectorFactory;
 import de.tuberlin.mcc.geddsprocon.datastreamprocessorconnectors.IDSPSinkConnector;
 import de.tuberlin.mcc.geddsprocon.datastreamprocessorconnectors.SocketPool;
 import de.tuberlin.mcc.geddsprocon.messagebuffer.IMessageBufferFunction;
@@ -21,19 +22,16 @@ import org.zeromq.ZMsg;
 import java.io.Serializable;
 
 public class FlinkSink extends RichSinkFunction<Serializable> implements IDSPSinkConnector, IMessageBufferFunction {
-    // most current host which the sink can send to
-    private String host;
-    private int port;
     private boolean transform;
     private volatile boolean isRunning = true;
     private final DSPConnectorConfig config;
+    private String messageBufferConnectionString;
 
     private ListState<byte[]> checkpointedState;
 
-    public FlinkSink(DSPConnectorConfig config) {
+    public FlinkSink(DSPConnectorConfig config, String messageBufferConnectionString) {
+        this.messageBufferConnectionString = messageBufferConnectionString;
         this.config = config;
-        this.host = config.getHost();
-        this.port = config.getPort();
         this.transform = config.getTransform();
     }
 
@@ -49,15 +47,17 @@ public class FlinkSink extends RichSinkFunction<Serializable> implements IDSPSin
      */
     @Override
     public void invoke(Serializable value, Context ctx) throws Exception {
-        if(this.transform && value instanceof Tuple)
-            value = TupleTransformer.transformToIntermediateTuple((Tuple)value);
+        if(this.isRunning) {
+            if(this.transform && value instanceof Tuple)
+                value = TupleTransformer.transformToIntermediateTuple((Tuple)value);
 
-        byte[] byteMessage = SerializationUtils.serialize(value);
+            byte[] byteMessage = SerializationUtils.serialize(value);
 
-        // block while the buffer is full
-        while(MessageBuffer.getInstance().isFull()) {}
+            // block while the buffer is full
+            while(DSPConnectorFactory.getInstance().getBuffer(this.messageBufferConnectionString).isFull()) {}
 
-        MessageBuffer.getInstance().writeBuffer(byteMessage);
+            DSPConnectorFactory.getInstance().getBuffer(this.messageBufferConnectionString).writeBuffer(byteMessage);
+        }
     }
 
     /**

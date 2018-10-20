@@ -13,24 +13,31 @@ public class DSPRequester implements Runnable {
     private int port;
     private String connectorType;
     private int messageNumber;
+    private String messageBufferConnectionString;
 
-    public DSPRequester(String host, int port, String connectorType) {
+    public DSPRequester(String host, int port, String connectorType, String messageBufferConnectionString) {
         this.host = host;
         this.port = port;
         this.connectorType = connectorType;
+        this.messageBufferConnectionString = messageBufferConnectionString;
         this.messageNumber = -1;
     }
 
+    /**
+     * Runs the DSP requester thread.
+     */
     @Override
     public void run() {
         ZMQ.Socket socket = SocketPool.getInstance().getOrCreateSocket(this.host, this.port);
         while(true) {
             //message.add(this.connectorType);
             //message.add(Integer.toString(this.messageNumber));
+            //message.send(socket);
+
+            // alternative way to send a multipart message
             socket.send(this.connectorType, ZMQ.SNDMORE);
             socket.send(Integer.toString(this.messageNumber), ZMQ.DONTWAIT);
 
-            //message.send(socket);
             //System.out.println("Trying to receive @" + this.host + ":" + this.port);
 
             ZMsg messages = ZMsg.recvMsg(socket);
@@ -40,9 +47,9 @@ public class DSPRequester implements Runnable {
                 this.messageNumber = Integer.parseInt(messages.pop().toString());
                 for(ZFrame frame : messages) {
                     // block writing to buffer as long the buffer is full
-                    while(MessageBuffer.getInstance().isFull()) {}
+                    while(DSPConnectorFactory.getInstance().getBuffer(this.messageBufferConnectionString).isFull()) {}
 
-                    MessageBuffer.getInstance().writeBuffer(frame.getData());
+                    DSPConnectorFactory.getInstance().getBuffer(this.messageBufferConnectionString).writeBuffer(frame.getData());
                 }
             }
         }
