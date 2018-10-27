@@ -20,7 +20,11 @@ import org.junit.Assert;
 import org.junit.Test;
 import org.zeromq.ZMQ;
 
-
+/**
+ * (SINK) --sends_to--> (SOURCE)
+ * If the test is a sink it takes test data and sends it to source.
+ * Start a sink first and start a source after. The sink should send the test data to the source where it should be printed out.
+ */
 
 public class FlinkTests {
 
@@ -37,6 +41,9 @@ public class FlinkTests {
     //
 
     // ======== start test: pull based approach test 1 =======
+    /**
+     * (SINK)
+     */
     @Test
     public void pullBasedApproachSimpleSink1() {
         try {
@@ -48,7 +55,7 @@ public class FlinkTests {
             ZMQ.Socket sender = context.socket(ZMQ.PUSH);
             sender.connect("tcp://localhost:9665");
             String[] testArray = new String[1];
-            testArray[0] = "HelloFromFlink a a a a a a a a b b b b b b b b c c c c c c c c";
+            testArray[0] = "HelloFromFlink a b c d e f g h i j k l m n o p q r s t u v w x y z";
 
             for(int i = 0; i < testArray.length; i++) {
                 System.out.println("Sending: " + testArray[i]);
@@ -67,7 +74,6 @@ public class FlinkTests {
             dataStream.addSink((SinkFunction)DSPConnectorFactory.getInstance().createSinkConnector(new DSPConnectorConfig.Builder("localhost", 9656)
                     .withDSP("flink")
                     .withHWM(20)
-                    //.withBufferConnectorString("buffer-test")
                     .withTimeout(10000)
                     .build()));
 
@@ -81,6 +87,13 @@ public class FlinkTests {
         }
     }
 
+    /**
+     * (SINK)
+     * BEFORE STARTING THE TEST: complex sink needs a netcat listener at port 9755.
+     * 1. start a terminal
+     * 2. nc -l 9755
+     * 3. start this test
+     */
     @Test
     public void pullBasedApproachComplexSink1() {
         try {
@@ -131,6 +144,9 @@ public class FlinkTests {
         }
     }
 
+    /**
+     * (SOURCE)
+     */
     @Test
     public void pullBasedApproachPrimarySource1() {
         try {
@@ -154,6 +170,9 @@ public class FlinkTests {
         }
     }
 
+    /**
+     * (SOURCE)
+     */
     @Test
     public void pullBasedApproachSecondarySource1() {
         try {
