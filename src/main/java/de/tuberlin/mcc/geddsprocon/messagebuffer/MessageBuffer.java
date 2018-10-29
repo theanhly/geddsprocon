@@ -116,14 +116,18 @@ public class MessageBuffer {
         // buffer gets overwritten if buffer isn't flushed in time
         synchronized (this.bufferLock) {
             //this.buffer[this.messages%this.bufferSize] = bytes;
+            //System.out.println("===== Message buffer writing start.");
             ZMsg writeMessage = new ZMsg();
             writeMessage.add(this.WRITE_MESSAGE);
             writeMessage.add(bytes);
             writeMessage.send(this.bufferSocket);
 
-            assert(this.bufferSocket.recvStr().equals("WRITE_SUCCESS"));
+            // do not receive the response in assert since it seems to be non blocking -> results in exception if run in a cluster
+            String response = this.bufferSocket.recvStr();
+            assert(response.equals("WRITE_SUCCESS"));
 
             this.messages++;
+            //System.out.println("===== Message buffer writing end.");
         }
         if(isFull())
         {
@@ -187,7 +191,10 @@ public class MessageBuffer {
     public void clearBuffer() {
         synchronized(this.bufferLock) {
             this.bufferSocket.send(this.CLEARBUFFER_MESSAGE);
-            assert(this.bufferSocket.recvStr().equals("CLEAR_SUCCESS"));
+
+            //
+            String response = this.bufferSocket.recvStr();
+            assert(response.equals("CLEAR_SUCCESS"));
             this.messages = 0;
             //Arrays.fill(this.buffer, new byte[]{(byte)0});
         }

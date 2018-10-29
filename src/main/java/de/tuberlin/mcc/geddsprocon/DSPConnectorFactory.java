@@ -5,14 +5,10 @@ import de.tuberlin.mcc.geddsprocon.datastreamprocessorconnectors.IDSPSinkConnect
 import de.tuberlin.mcc.geddsprocon.datastreamprocessorconnectors.SocketPool;
 import de.tuberlin.mcc.geddsprocon.datastreamprocessorconnectors.flinkconnectors.FlinkSink;
 import de.tuberlin.mcc.geddsprocon.datastreamprocessorconnectors.flinkconnectors.FlinkSource;
-import de.tuberlin.mcc.geddsprocon.datastreamprocessorconnectors.flinkconnectors.TupleTransformer;
 import de.tuberlin.mcc.geddsprocon.datastreamprocessorconnectors.sparkconnectors.SparkSink;
 import de.tuberlin.mcc.geddsprocon.datastreamprocessorconnectors.sparkconnectors.SparkSource;
 import de.tuberlin.mcc.geddsprocon.messagebuffer.MessageBuffer;
-import org.apache.commons.lang.SerializationUtils;
-import sun.plugin2.message.Message;
 
-import java.io.Serializable;
 import java.util.HashMap;
 
 public class DSPConnectorFactory<T extends Object> {
