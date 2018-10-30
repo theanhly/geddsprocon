@@ -85,6 +85,7 @@ pairs.foreachRDD(
 The ```DSPConnectorConfig.Builder``` is used to build a config which sets up the output/input operators. Below we will describe what the user can set and in which context the settings are valid.
 
 The builder has one specific constructor which is valid for the output operator
+
 Constructor | Description
 --- | -----
 `public Builder(String host, int port)` | Determines IP at which the DSP router is reachable for a DSP requester. The `host`should therefore always be `localhost`.
