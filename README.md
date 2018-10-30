@@ -98,7 +98,7 @@ The builder has one specific constructor which is valid for the output operator
 
 Constructor | Description
 --- | ---
-`public Builder(String host, int port)` | Determines IP at which the DSP router is reachable for a DSP requester. The `host`should therefore always be `"localhost"`.
+`public Builder(String adrress, int port)` | Determines IP address and port at which the DSP router is reachable for a DSP requester. The `address`should therefore always be `"localhost"`.
 
 The following table describes the settings which are available.
 
@@ -109,4 +109,4 @@ The following table describes the settings which are available.
  `withoutTransformation()` | - | If the connected DSPs are homogeneous, transformation to intermediate tuples are unnecessary. Using this method turns transformation to and from intermediate transformation off. Transformation is `true` by default.|
 `withTimeout(int timeout)` | `[1, 2147483647]` | Only valid for input operators. Input operators request timeout in ms. After `timeout` ms the DSP requester sends another request.
 `withBufferConnectorString(String connectorString)` | String | This sets the connection string to the message-buffer process. If the DSP application restarts due to failure the connection string determines the message-buffer. It is highly recommended to set a buffer string in case of failure. If this setting is omitted an internal unused connection string is generated.
-`withRequestAddress(String host, int port, String connectorType)` | `Output operator host string`, `Output operator host port`, `["PRIMARY", "SECONDARY"]`  | Only valid for input operators. Determines the IP of the output operator. The `connectorType`determines if it is a primary connection or a secondary connection.
+`withRequestAddress(String adrress, int port, String connectorType)` | `Output operator IP string`, `Output operator port`, `["PRIMARY", "SECONDARY"]`  | Only valid for input operators. Determines the IP of the output operator. The `connectorType`determines if it is a primary connection or a secondary connection.
