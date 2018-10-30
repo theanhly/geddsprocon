@@ -88,7 +88,7 @@ The builder has one specific constructor which is valid for the output operator
 
 Constructor | Description
 --- | ---
-`public Builder(String host, int port)` | Determines IP at which the DSP router is reachable for a DSP requester. The `host`should therefore always be `localhost`.
+`public Builder(String host, int port)` | Determines IP at which the DSP router is reachable for a DSP requester. The `host`should therefore always be `"localhost"`.
 
 The following table describes the settings which are available.
 
