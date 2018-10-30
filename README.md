@@ -81,6 +81,16 @@ tuples.foreachRDD(
 				.withTimeout(10000)
 				.build()));
 ```
+## DSPConnectorFactory
+The `DSPConnectorFactory`is the main class which creates the input/output operators. 
+
+Function | Return | Description
+--- | --- | ---
+`createSourceConnector(DSPConnectorConfig config)` | `IDSPSourceConnector` | This creates the input operator. A cast to the resepective DSP (e.g., `SourceFunction` for Flink, `Receiver` for Spark) is still needed.
+`createSinkConnector(DSPConnectorConfig config)` | `IDSPSinkConnector` | This creates the output operator. A cast to the resepective DSP (e.g., `SinkFunction` for Flink, `VoidFunction` for Spark) is still needed. 
+
+Both functions need a `DSPConnectorConfig` to set up the operators.
+
 ## DSPConnectorConfig.Builder
 The ```DSPConnectorConfig.Builder``` is used to build a config which sets up the output/input operators. Below we will describe what the user can set and in which context the settings are valid.
 
