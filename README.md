@@ -3,7 +3,7 @@
 ## How to use geddsprocon ... 
 1. Clone this project
 2. Use Maven to install the project into your local repository: ```mvn clean install```
-3. Add the project into your Spark/Flink pom:
+3. Add the project dependency to your Spark/Flink Maven project:
 ```xml
 <dependency>
 	<groupId>de.tuberlin.mcc.geddsprocon</groupId>
