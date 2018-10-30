@@ -23,8 +23,13 @@ DataStream<Tuple2<String, Integer>> dataStream = env.addSource(
 		.createSourceConnector(
 			new DSPConnectorConfig.Builder()
 	    			.withDSP("flink")
-	    			.withRequestAddress("localhost", 9656, DSPConnectorFactory.ConnectorType.PRIMARY)
-	    			.withRequestAddress("localhost", 9666, DSPConnectorFactory.ConnectorType.PRIMARY)
+				.withBufferConnectorString("buffer-connection-string")
+	    			.withRequestAddress("localhost"
+					, 9656
+					, DSPConnectorFactory.ConnectorType.PRIMARY)
+	    			.withRequestAddress("localhost"
+					, 9666
+					, DSPConnectorFactory.ConnectorType.PRIMARY)
 	    			.build())
 			, TypeInfoParser.parse("Tuple2<String,Integer>"))
 ```
@@ -36,6 +41,7 @@ dataStream.addSink(
 		.createSinkConnector(
 			new DSPConnectorConfig.Builder("localhost", 9656)
                     		.withDSP("flink")
+				.withBufferConnectorString("buffer-connection-string")
                     		.withHWM(20)
                     		.withTimeout(10000)
                     		.build()));
@@ -53,8 +59,13 @@ JavaReceiverInputDStream<Tuple2<String, Integer>> tuples = ssc.receiverStream(
 		.createSourceConnector(
 			new DSPConnectorConfig.Builder()
                     		.withDSP("spark")
-                    		.withRequestAddress("localhost", 9656, DSPConnectorFactory.ConnectorType.PRIMARY)
-                    		.withRequestAddress("localhost", 9666, DSPConnectorFactory.ConnectorType.PRIMARY)
+				.withBufferConnectorString("buffer-connection-string")
+                    		.withRequestAddress("localhost"
+					, 9656
+					, DSPConnectorFactory.ConnectorType.PRIMARY)
+                    		.withRequestAddress("localhost"
+					, 9666
+					, DSPConnectorFactory.ConnectorType.PRIMARY)
                     		.build()));
 ```
 #### Example: Output operator as a VoidFunction
@@ -64,8 +75,19 @@ pairs.foreachRDD(
 		.getInstance()
 		.createSinkConnector(
 			new DSPConnectorConfig.Builder("localhost", 9656)
-			    .withDSP("spark")
-			    .withHWM(20)
-			    .withTimeout(10000)
-			    .build()));
+				.withBufferConnectorString("buffer-connection-string")
+				.withDSP("spark")
+				.withHWM(20)
+				.withTimeout(10000)
+				.build()));
 ```
+## DSPConnectorConfig
+The ```DSPConnectorConfig``` is used to set up the output/input operators. Below we will describe what the user can set and in which context the settings are valid.
+| Method | Values |  Setting Description |
+| --- | --- | --- |
+| `withDSP(String dspString)` | `flink`, `spark` | Determine which DSP context the input or output operators are used in. |
+| `withHWM(int hwm)` | `[1, 2147483647]` | The maximum amount of messages the message-buffer should hold. Its default value is `1000`.|
+| `withoutTransformation()` | - | If the connected DSPs are homogeneous, transformation to intermediate tuples are unnecessary. Using this method turns transformation to and from intermediate transformation off. Transformation is `true` by default.| 
+| `withTimeout(int timeout)` | `[1, 2147483647]` | Only valid for input operators. Input operators request timeout in ms. After `timeout` ms the DSP requester sends another request. |
+| `withBufferConnectorString(String connectorString)` | String | This sets the connection string to the message-buffer process. If the DSP application restarts due to failure the connection string determines the message-buffer. It is highly recommended to set a buffer string in case of failure. If this setting is omitted an internal unused connection string is generated. |
+| `withRequestAddress(String host, <br>int port, <br>String connectorType)` | `Output operator host string, <br> Output operator host port, [PRIMARY, SECONDARY]`  | Only valid for input operators. Determines the IP of the output operator. The `connectorType`determines if it is a primary connection or a secondary connection. |
