@@ -24,10 +24,10 @@ DataStream<Tuple2<String, Integer>> dataStream = env.addSource(
 			new DSPConnectorConfig.Builder()
 	    			.withDSP("flink")
 				.withBufferConnectorString("buffer-connection-string")
-	    			.withRequestAddress("localhost"
+	    			.withRequestAddress("31.161.244.160"
 					, 9656
 					, DSPConnectorFactory.ConnectorType.PRIMARY)
-	    			.withRequestAddress("localhost"
+	    			.withRequestAddress("228.206.65.0"
 					, 9666
 					, DSPConnectorFactory.ConnectorType.PRIMARY)
 	    			.build())
@@ -60,10 +60,10 @@ JavaReceiverInputDStream<Tuple2<String, Integer>> tuples = ssc.receiverStream(
 			new DSPConnectorConfig.Builder()
                     		.withDSP("spark")
 				.withBufferConnectorString("buffer-connection-string")
-                    		.withRequestAddress("localhost"
+                    		.withRequestAddress("43.89.42.250"
 					, 9656
 					, DSPConnectorFactory.ConnectorType.PRIMARY)
-                    		.withRequestAddress("localhost"
+                    		.withRequestAddress("152.182.83.148"
 					, 9666
 					, DSPConnectorFactory.ConnectorType.PRIMARY)
                     		.build()));
