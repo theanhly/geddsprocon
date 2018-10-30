@@ -6,7 +6,7 @@
 3. Add the project into your Spark/Flink pom:
 ```xml
 <dependency>
-  <groupId>de.tuberlin.mcc.geddsprocon</groupId>
+	<groupId>de.tuberlin.mcc.geddsprocon</groupId>
 	<artifactId>geddsprocon</artifactId>
 	<version>1.0-SNAPSHOT</version>
 </dependency>
