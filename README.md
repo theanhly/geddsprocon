@@ -70,7 +70,7 @@ JavaReceiverInputDStream<Tuple2<String, Integer>> tuples = ssc.receiverStream(
 ```
 #### Example: Output operator as a VoidFunction
 ```java
-pairs.foreachRDD(
+tuples.foreachRDD(
 	(VoidFunction)DSPConnectorFactory
 		.getInstance()
 		.createSinkConnector(
