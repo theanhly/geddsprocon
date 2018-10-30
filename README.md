@@ -84,10 +84,10 @@ pairs.foreachRDD(
 ## DSPConnectorConfig
 The ```DSPConnectorConfig``` is used to set up the output/input operators. Below we will describe what the user can set and in which context the settings are valid.
 | Method | Values |  Setting Description |
-| --- | --- | --- |
+| --- | --- | --------- |
 | `withDSP(String dspString)` | `flink`, `spark` | Determine which DSP context the input or output operators are used in. |
 | `withHWM(int hwm)` | `[1, 2147483647]` | The maximum amount of messages the message-buffer should hold. Its default value is `1000`.|
 | `withoutTransformation()` | - | If the connected DSPs are homogeneous, transformation to intermediate tuples are unnecessary. Using this method turns transformation to and from intermediate transformation off. Transformation is `true` by default.| 
 | `withTimeout(int timeout)` | `[1, 2147483647]` | Only valid for input operators. Input operators request timeout in ms. After `timeout` ms the DSP requester sends another request. |
 | `withBufferConnectorString(String connectorString)` | String | This sets the connection string to the message-buffer process. If the DSP application restarts due to failure the connection string determines the message-buffer. It is highly recommended to set a buffer string in case of failure. If this setting is omitted an internal unused connection string is generated. |
-| `withRequestAddress(String host, <br>int port, <br>String connectorType)` | `Output operator host string, <br> Output operator host port, [PRIMARY, SECONDARY]`  | Only valid for input operators. Determines the IP of the output operator. The `connectorType`determines if it is a primary connection or a secondary connection. |
+| `withRequestAddress(String host, <br>int port, <br>String connectorType)` | `Output operator host string`, <br> `Output operator host port`, `["PRIMARY", "SECONDARY"]`  | Only valid for input operators. Determines the IP of the output operator. The `connectorType`determines if it is a primary connection or a secondary connection. |
