@@ -104,7 +104,7 @@ The following table describes the settings which are available.
 
  Method | Values |  Setting Description 
  ----- | --- | -------- 
-`withDSP(String dspString)` | `flink`, `spark` | Determine which DSP context the input or output operators are used in. |
+`withDSP(String dspString)` | `"flink"`, `"spark"` | Determine which DSP context the input or output operators are used in. |
 `withHWM(int hwm)` | `[1, 2147483647]` | The maximum amount of messages the message-buffer should hold. Its default value is `1000`.
  `withoutTransformation()` | - | If the connected DSPs are homogeneous, transformation to intermediate tuples are unnecessary. Using this method turns transformation to and from intermediate transformation off. Transformation is `true` by default.|
 `withTimeout(int timeout)` | `[1, 2147483647]` | Only valid for input operators. Input operators request timeout in ms. After `timeout` ms the DSP requester sends another request.
