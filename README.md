@@ -21,7 +21,8 @@ DataStream<Tuple2<String, Integer>> dataStream = env.addSource(
 	(SourceFunction)DSPConnectorFactory
 		.getInstance()
 		.createSourceConnector(
-			new DSPConnectorConfig.Builder()
+			new DSPConnectorConfig
+				.Builder()
 	    			.withDSP("flink")
 				.withBufferConnectorString("buffer-connection-string")
 	    			.withRequestAddress("31.161.244.160"
@@ -39,7 +40,8 @@ dataStream.addSink(
 	(SinkFunction)DSPConnectorFactory
 		.getInstance()
 		.createSinkConnector(
-			new DSPConnectorConfig.Builder("localhost", 9656)
+			new DSPConnectorConfig
+				.Builder("localhost", 9656)
                     		.withDSP("flink")
 				.withBufferConnectorString("buffer-connection-string")
                     		.withHWM(20)
@@ -57,7 +59,8 @@ JavaReceiverInputDStream<Tuple2<String, Integer>> tuples = ssc.receiverStream(
 	(Receiver)DSPConnectorFactory
 		.getInstance()
 		.createSourceConnector(
-			new DSPConnectorConfig.Builder()
+			new DSPConnectorConfig
+				.Builder()
                     		.withDSP("spark")
 				.withBufferConnectorString("buffer-connection-string")
                     		.withRequestAddress("43.89.42.250"
@@ -74,7 +77,8 @@ tuples.foreachRDD(
 	(VoidFunction)DSPConnectorFactory
 		.getInstance()
 		.createSinkConnector(
-			new DSPConnectorConfig.Builder("localhost", 9656)
+			new DSPConnectorConfig
+				.Builder("localhost", 9656)
 				.withBufferConnectorString("buffer-connection-string")
 				.withDSP("spark")
 				.withHWM(20)
