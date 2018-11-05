@@ -2,6 +2,7 @@ package de.tuberlin.mcc.geddsprocon.datastreamprocessorconnectors.sparkconnector
 
 import de.tuberlin.mcc.geddsprocon.DSPConnectorConfig;
 import de.tuberlin.mcc.geddsprocon.DSPConnectorFactory;
+import de.tuberlin.mcc.geddsprocon.DSPManager;
 import de.tuberlin.mcc.geddsprocon.datastreamprocessorconnectors.IDSPSinkConnector;
 import de.tuberlin.mcc.geddsprocon.messagebuffer.IMessageBufferFunction;
 import org.apache.commons.lang.SerializationUtils;
@@ -14,26 +15,36 @@ import java.io.Serializable;
 public class SparkSink<T extends JavaRDDLike> implements IDSPSinkConnector, VoidFunction<T>, IMessageBufferFunction {
     private boolean transform;
     private String messageBufferConnectionString;
+    private final DSPConnectorConfig config;
+    private volatile boolean init = false;
 
-    public SparkSink(DSPConnectorConfig config, String messageBufferConnectionString) {
+    public SparkSink(DSPConnectorConfig config) {
+        this.config = config;
         this.transform = config.getTransform();
-        this.messageBufferConnectionString = messageBufferConnectionString;
+        this.messageBufferConnectionString = "ipc:///" +  config.getBufferConnectionString();
     }
 
     @Override
     public void call(T value) throws Exception {
-        for(Object rdd : value.collect()) {
-            if(rdd instanceof Serializable) {
-                if(rdd instanceof scala.Product && transform)
-                    rdd = TupleTransformer.transformToIntermediateTuple((scala.Product)rdd);
+        if(!init) {
+            DSPManager.getInstance().initiateOutputOperator(config, this);
+            this.init = true;
+        }
 
-                byte[] byteMessage = SerializationUtils.serialize((Serializable)rdd);
+        if(init) {
+            for(Object rdd : value.collect()) {
+                if(rdd instanceof Serializable) {
+                    if(rdd instanceof scala.Product && transform)
+                        rdd = TupleTransformer.transformToIntermediateTuple((scala.Product)rdd);
 
-                // block while the buffer is full
-                while(DSPConnectorFactory.getInstance().getBuffer(this.messageBufferConnectionString).isFull()) {}
+                    byte[] byteMessage = SerializationUtils.serialize((Serializable)rdd);
 
-                DSPConnectorFactory.getInstance().getBuffer(this.messageBufferConnectionString).writeBuffer(byteMessage);
-                System.out.println("Written to buffer");
+                    // block while the buffer is full
+                    while(DSPManager.getInstance().getBuffer(this.messageBufferConnectionString).isFull()) {}
+
+                    DSPManager.getInstance().getBuffer(this.messageBufferConnectionString).writeBuffer(byteMessage);
+                    System.out.println("Written to buffer");
+                }
             }
         }
     }

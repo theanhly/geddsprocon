@@ -2,6 +2,7 @@ package de.tuberlin.mcc.geddsprocon.datastreamprocessorconnectors.sparkconnector
 
 import de.tuberlin.mcc.geddsprocon.DSPConnectorConfig;
 import de.tuberlin.mcc.geddsprocon.DSPConnectorFactory;
+import de.tuberlin.mcc.geddsprocon.DSPManager;
 import de.tuberlin.mcc.geddsprocon.datastreamprocessorconnectors.IDSPSourceConnector;
 import de.tuberlin.mcc.geddsprocon.datastreamprocessorconnectors.SocketPool;
 import de.tuberlin.mcc.geddsprocon.messagebuffer.IMessageBufferFunction;
@@ -20,10 +21,11 @@ public class SparkSource extends Receiver<Serializable> implements IDSPSourceCon
     private boolean transform;
     private final DSPConnectorConfig config;
     private String messageBufferConnectionString;
+    private volatile boolean init = false;
 
-    public SparkSource (DSPConnectorConfig config, String messageBufferConnectionString) {
+    public SparkSource (DSPConnectorConfig config) {
         super(StorageLevel.MEMORY_AND_DISK_2());
-        this.messageBufferConnectionString = messageBufferConnectionString;
+        this.messageBufferConnectionString = "ipc:///" + config.getBufferConnectionString();
         this.config = config;
         this.host = this.config.getHost();
         this.port = this.config.getPort();
@@ -47,7 +49,12 @@ public class SparkSource extends Receiver<Serializable> implements IDSPSourceCon
         try {
             byte[] byteMessage;
 
-            while (!isStopped()) {
+            if(!this.init) {
+                DSPManager.getInstance().initiateInputOperator(this.config);
+                this.init = true;
+            }
+
+            while (!isStopped() && this.init) {
                 if(config.getSocketType() == SocketPool.SocketType.PULL) {
                     while((byteMessage = receiveData(this.host, this.port)) != null) {
                         Serializable message = (Serializable)SerializationUtils.deserialize(byteMessage);
@@ -58,8 +65,8 @@ public class SparkSource extends Receiver<Serializable> implements IDSPSourceCon
                         store(message);
                     }
                 } else if (config.getSocketType() == SocketPool.SocketType.REQ || config.getSocketType() == SocketPool.SocketType.DEFAULT) {
-                    if(!DSPConnectorFactory.getInstance().getBuffer(this.messageBufferConnectionString).isEmpty()) {
-                        DSPConnectorFactory.getInstance().getBuffer(this.messageBufferConnectionString).flushBuffer(this);
+                    if(!DSPManager.getInstance().getBuffer(this.messageBufferConnectionString).isEmpty()) {
+                        DSPManager.getInstance().getBuffer(this.messageBufferConnectionString).flushBuffer(this);
                     }
                 }
             }

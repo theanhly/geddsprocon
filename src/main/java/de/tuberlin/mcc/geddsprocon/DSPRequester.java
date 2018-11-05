@@ -30,9 +30,6 @@ public class DSPRequester implements Runnable {
     public void run() {
         ZMQ.Socket socket = SocketPool.getInstance().getOrCreateSocket(this.host, this.port);
         while(true) {
-            //message.add(this.connectorType);
-            //message.add(Integer.toString(this.messageNumber));
-            //message.send(socket);
 
             // alternative way to send a multipart message
             socket.send(this.connectorType, ZMQ.SNDMORE);
@@ -47,9 +44,9 @@ public class DSPRequester implements Runnable {
                 this.messageNumber = Integer.parseInt(messages.pop().toString());
                 for(ZFrame frame : messages) {
                     // block writing to buffer as long the buffer is full
-                    while(DSPConnectorFactory.getInstance().getBuffer(this.messageBufferConnectionString).isFull()) {}
+                    while(DSPManager.getInstance().getBuffer(this.messageBufferConnectionString).isFull()) {}
 
-                    DSPConnectorFactory.getInstance().getBuffer(this.messageBufferConnectionString).writeBuffer(frame.getData());
+                    DSPManager.getInstance().getBuffer(this.messageBufferConnectionString).writeBuffer(frame.getData());
                 }
             }
         }

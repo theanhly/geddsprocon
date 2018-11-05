@@ -2,6 +2,7 @@ package de.tuberlin.mcc.geddsprocon.datastreamprocessorconnectors.flinkconnector
 
 import de.tuberlin.mcc.geddsprocon.DSPConnectorConfig;
 import de.tuberlin.mcc.geddsprocon.DSPConnectorFactory;
+import de.tuberlin.mcc.geddsprocon.DSPManager;
 import de.tuberlin.mcc.geddsprocon.datastreamprocessorconnectors.IDSPSourceConnector;
 import de.tuberlin.mcc.geddsprocon.datastreamprocessorconnectors.SocketPool;
 import de.tuberlin.mcc.geddsprocon.messagebuffer.IMessageBufferFunction;
@@ -23,10 +24,11 @@ public class FlinkSource implements SourceFunction<Serializable>, IDSPSourceConn
     private final String connectorType;
     private SourceContext<Serializable> ctx;
     private String messageBufferConnectionString;
+    private volatile boolean init = false;
 
-    public FlinkSource(DSPConnectorConfig config, String messageBufferConnectionString) {
+    public FlinkSource(DSPConnectorConfig config) {
         this.config = config;
-        this.messageBufferConnectionString = messageBufferConnectionString;
+        this.messageBufferConnectionString = "ipc:///" + config.getBufferConnectionString();
         this.host = this.config.getHost();
         this.port = this.config.getPort();
         this.transform = this.config.getTransform();
@@ -39,10 +41,16 @@ public class FlinkSource implements SourceFunction<Serializable>, IDSPSourceConn
     }
 
     private synchronized void collect(SourceContext<Serializable> ctx) {
-        while(isRunning) {
+        if(!this.init) {
+            DSPManager.getInstance().initiateInputOperator(this.config);
+            this.init = true;
+        }
+
+        while(isRunning && this.init) {
             byte[] byteMessage;
 
             if(config.getSocketType() == SocketPool.SocketType.PULL) {
+
                 while ((byteMessage = receiveData(this.host, this.port)) != null) {
 
                     Serializable message = (Serializable)SerializationUtils.deserialize(byteMessage);
@@ -53,9 +61,10 @@ public class FlinkSource implements SourceFunction<Serializable>, IDSPSourceConn
                     ctx.collect(message);
                 }
             } else if(config.getSocketType() == SocketPool.SocketType.REQ || config.getSocketType() == SocketPool.SocketType.DEFAULT) {
-                if(!DSPConnectorFactory.getInstance().getBuffer(this.messageBufferConnectionString).isEmpty()) {
+
+                if(!DSPManager.getInstance().getBuffer(this.messageBufferConnectionString).isEmpty()) {
                     this.ctx = ctx;
-                    DSPConnectorFactory.getInstance().getBuffer(this.messageBufferConnectionString).flushBuffer(this);
+                    DSPManager.getInstance().getBuffer(this.messageBufferConnectionString).flushBuffer(this);
                 }
             }
         }

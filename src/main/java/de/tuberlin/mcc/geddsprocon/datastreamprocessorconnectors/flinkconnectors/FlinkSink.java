@@ -2,6 +2,8 @@ package de.tuberlin.mcc.geddsprocon.datastreamprocessorconnectors.flinkconnector
 
 import de.tuberlin.mcc.geddsprocon.DSPConnectorConfig;
 import de.tuberlin.mcc.geddsprocon.DSPConnectorFactory;
+import de.tuberlin.mcc.geddsprocon.DSPManager;
+import de.tuberlin.mcc.geddsprocon.DSPRouter;
 import de.tuberlin.mcc.geddsprocon.datastreamprocessorconnectors.IDSPSinkConnector;
 import de.tuberlin.mcc.geddsprocon.datastreamprocessorconnectors.SocketPool;
 import de.tuberlin.mcc.geddsprocon.messagebuffer.IMessageBufferFunction;
@@ -26,11 +28,13 @@ public class FlinkSink extends RichSinkFunction<Serializable> implements IDSPSin
     private volatile boolean isRunning = true;
     private final DSPConnectorConfig config;
     private String messageBufferConnectionString;
+    private volatile boolean init = false;
+    private MessageBuffer messageBuffer;
 
     private ListState<byte[]> checkpointedState;
 
-    public FlinkSink(DSPConnectorConfig config, String messageBufferConnectionString) {
-        this.messageBufferConnectionString = messageBufferConnectionString;
+    public FlinkSink(DSPConnectorConfig config) {
+        this.messageBufferConnectionString = "ipc:///" + config.getBufferConnectionString();
         this.config = config;
         this.transform = config.getTransform();
     }
@@ -47,16 +51,21 @@ public class FlinkSink extends RichSinkFunction<Serializable> implements IDSPSin
      */
     @Override
     public void invoke(Serializable value, Context ctx) throws Exception {
-        if(this.isRunning) {
+        if(!init) {
+            DSPManager.getInstance().initiateOutputOperator(config, this);
+            this.init = true;
+        }
+
+        if(this.isRunning && this.init) {
             if(this.transform && value instanceof Tuple)
                 value = TupleTransformer.transformToIntermediateTuple((Tuple)value);
 
             byte[] byteMessage = SerializationUtils.serialize(value);
 
             // block while the buffer is full
-            while(DSPConnectorFactory.getInstance().getBuffer(this.messageBufferConnectionString).isFull()) {}
+            while(DSPManager.getInstance().getBuffer(this.messageBufferConnectionString).isFull()) {}
 
-            DSPConnectorFactory.getInstance().getBuffer(this.messageBufferConnectionString).writeBuffer(byteMessage);
+            DSPManager.getInstance().getBuffer(this.messageBufferConnectionString).writeBuffer(byteMessage);
         }
     }
 
