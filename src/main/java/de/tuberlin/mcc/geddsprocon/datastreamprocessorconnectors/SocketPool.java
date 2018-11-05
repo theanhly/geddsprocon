@@ -77,6 +77,9 @@ public class SocketPool {
 
         ZMQ.Socket socket = null;
 
+        if(this.sockets.containsKey(key))
+            return this.sockets.get(key);
+
         if (socketType == null)
             throw new IllegalArgumentException(String.format("Socket with host {0} and port {1} not found. Parameter socketType needs to be defined.", host, port));
 

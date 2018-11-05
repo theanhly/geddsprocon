@@ -73,7 +73,7 @@ public class MessageBufferProcess {
                     break;
                 } else if (command.equals("MESSAGECOUNT")) {
                     System.out.println("MESSAGECOUNT received");
-                    socket.send(Integer.toString(message.toArray().length));
+                    socket.send(Integer.toString(addSentMessagesFrame ? message.toArray().length - 1 : message.toArray().length));
                 } else if (command.equals("SENTMESSAGES")) {
                     //System.out.println("SENTMESSAGES received");
                     socket.send(Long.toString(sentMessages));

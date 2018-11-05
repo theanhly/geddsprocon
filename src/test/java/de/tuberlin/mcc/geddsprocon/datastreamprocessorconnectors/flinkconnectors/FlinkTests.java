@@ -74,6 +74,7 @@ public class FlinkTests {
             dataStream.addSink((SinkFunction)DSPConnectorFactory.getInstance().createSinkConnector(new DSPConnectorConfig.Builder("localhost", 9656)
                     .withDSP("flink")
                     .withHWM(20)
+                    .withBufferConnectorString("sendbuffer")
                     .withTimeout(10000)
                     .build()));
 
@@ -181,6 +182,7 @@ public class FlinkTests {
             DataStream<Tuple2<String, Integer>> dataStream = env
                     .addSource((SourceFunction)DSPConnectorFactory.getInstance().createSourceConnector(new DSPConnectorConfig.Builder()
                             .withDSP("flink")
+                            .withBufferConnectorString("recvbuffer")
                             .withRequestAddress("localhost", 9656, DSPConnectorFactory.ConnectorType.SECONDARY)
                             .withRequestAddress("localhost", 9666, DSPConnectorFactory.ConnectorType.SECONDARY)
                             .build()), TypeInfoParser.parse("Tuple2<String,Integer>"))
