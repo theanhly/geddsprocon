@@ -3,6 +3,8 @@
   <component name="ProjectModuleManager">
     <modules>
       <module fileurl="file://$PROJECT_DIR$/.idea/geddsprocon.iml" filepath="$PROJECT_DIR$/.idea/geddsprocon.iml" />
+      <module fileurl="file://$PROJECT_DIR$/geddsprocon-core/geddsprocon-core.iml" filepath="$PROJECT_DIR$/geddsprocon-core/geddsprocon-core.iml" />
+      <module fileurl="file://$PROJECT_DIR$/geddsprocon-messagebuffer/geddsprocon-messagebuffer.iml" filepath="$PROJECT_DIR$/geddsprocon-messagebuffer/geddsprocon-messagebuffer.iml" />
     </modules>
   </component>
 </project>

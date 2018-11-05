@@ -6,11 +6,18 @@
         <sourceOutputDir name="target/generated-sources/annotations" />
         <sourceTestOutputDir name="target/generated-test-sources/test-annotations" />
         <outputRelativeToContentRoot value="true" />
-        <module name="geddsprocon" />
+        <module name="geddsprocon-core" />
+        <module name="geddsprocon-messagebuffer" />
       </profile>
     </annotationProcessing>
     <bytecodeTargetLevel>
-      <module name="geddsprocon" target="1.8" />
+      <module name="geddsprocon" target="1.5" />
+      <module name="geddsprocon-core" target="1.8" />
+      <module name="geddsprocon-messagebuffer" target="1.8" />
+      <module name="geddsproconcore" target="1.8" />
+      <module name="geddsproconmessagebuffer" target="1.8" />
+      <module name="messagebuffer" target="1.8" />
+      <module name="messagebufferprocess" target="1.5" />
     </bytecodeTargetLevel>
   </component>
 </project>
