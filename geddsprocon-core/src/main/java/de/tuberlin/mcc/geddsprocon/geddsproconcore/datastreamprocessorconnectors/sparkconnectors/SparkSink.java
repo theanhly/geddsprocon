@@ -1,11 +1,10 @@
 package de.tuberlin.mcc.geddsprocon.geddsproconcore.datastreamprocessorconnectors.sparkconnectors;
 
 import de.tuberlin.mcc.geddsprocon.geddsproconcore.DSPConnectorConfig;
-import de.tuberlin.mcc.geddsprocon.geddsproconcore.DSPConnectorFactory;
 import de.tuberlin.mcc.geddsprocon.geddsproconcore.DSPManager;
+import de.tuberlin.mcc.geddsprocon.geddsproconcore.common.SerializationTool;
 import de.tuberlin.mcc.geddsprocon.geddsproconcore.datastreamprocessorconnectors.IDSPSinkConnector;
 import de.tuberlin.mcc.geddsprocon.geddsproconcore.messagebuffer.IMessageBufferFunction;
-import org.apache.commons.lang.SerializationUtils;
 import org.apache.spark.api.java.JavaRDDLike;
 import org.apache.spark.api.java.function.VoidFunction;
 import org.zeromq.ZMsg;
@@ -37,7 +36,7 @@ public class SparkSink<T extends JavaRDDLike> implements IDSPSinkConnector, Void
                     if(rdd instanceof scala.Product && transform)
                         rdd = TupleTransformer.transformToIntermediateTuple((scala.Product)rdd);
 
-                    byte[] byteMessage = SerializationUtils.serialize((Serializable)rdd);
+                    byte[] byteMessage = SerializationTool.serialize((Serializable)rdd);
 
                     // block while the buffer is full
                     while(DSPManager.getInstance().getBuffer(this.messageBufferConnectionString).isFull()) {}

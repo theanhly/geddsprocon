@@ -1,12 +1,11 @@
 package de.tuberlin.mcc.geddsprocon.geddsproconcore.datastreamprocessorconnectors.sparkconnectors;
 
 import de.tuberlin.mcc.geddsprocon.geddsproconcore.DSPConnectorConfig;
-import de.tuberlin.mcc.geddsprocon.geddsproconcore.DSPConnectorFactory;
 import de.tuberlin.mcc.geddsprocon.geddsproconcore.DSPManager;
+import de.tuberlin.mcc.geddsprocon.geddsproconcore.common.SerializationTool;
 import de.tuberlin.mcc.geddsprocon.geddsproconcore.datastreamprocessorconnectors.IDSPSourceConnector;
 import de.tuberlin.mcc.geddsprocon.geddsproconcore.datastreamprocessorconnectors.SocketPool;
 import de.tuberlin.mcc.geddsprocon.geddsproconcore.messagebuffer.IMessageBufferFunction;
-import org.apache.commons.lang.SerializationUtils;
 import org.apache.spark.storage.StorageLevel;
 import org.apache.spark.streaming.receiver.Receiver;
 import org.zeromq.ZFrame;
@@ -57,7 +56,7 @@ public class SparkSource extends Receiver<Serializable> implements IDSPSourceCon
             while (!isStopped() && this.init) {
                 if(config.getSocketType() == SocketPool.SocketType.PULL) {
                     while((byteMessage = receiveData(this.host, this.port)) != null) {
-                        Serializable message = (Serializable)SerializationUtils.deserialize(byteMessage);
+                        Serializable message = (Serializable)SerializationTool.deserialize(byteMessage);
 
                         if(message instanceof de.tuberlin.mcc.geddsprocon.geddsproconcore.tuple.Tuple && transform)
                             message = (Serializable)TupleTransformer.transformFromIntermediateTuple((de.tuberlin.mcc.geddsprocon.geddsproconcore.tuple.Tuple)message);
@@ -85,7 +84,7 @@ public class SparkSource extends Receiver<Serializable> implements IDSPSourceCon
     public synchronized ZMsg flush(ZMsg messages) {
         for(ZFrame frame : messages) {
 
-            Serializable message = (Serializable)SerializationUtils.deserialize(frame.getData());
+            Serializable message = (Serializable)SerializationTool.deserialize(frame.getData());
 
             if(message instanceof de.tuberlin.mcc.geddsprocon.geddsproconcore.tuple.Tuple && this.transform)
                 message = (Serializable)TupleTransformer.transformFromIntermediateTuple((de.tuberlin.mcc.geddsprocon.geddsproconcore.tuple.Tuple)message);

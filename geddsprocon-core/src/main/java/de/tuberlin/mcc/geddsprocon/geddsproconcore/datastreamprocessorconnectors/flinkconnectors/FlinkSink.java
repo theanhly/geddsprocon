@@ -1,23 +1,13 @@
 package de.tuberlin.mcc.geddsprocon.geddsproconcore.datastreamprocessorconnectors.flinkconnectors;
 
 import de.tuberlin.mcc.geddsprocon.geddsproconcore.DSPConnectorConfig;
-import de.tuberlin.mcc.geddsprocon.geddsproconcore.DSPConnectorFactory;
 import de.tuberlin.mcc.geddsprocon.geddsproconcore.DSPManager;
-import de.tuberlin.mcc.geddsprocon.geddsproconcore.DSPRouter;
+import de.tuberlin.mcc.geddsprocon.geddsproconcore.common.SerializationTool;
 import de.tuberlin.mcc.geddsprocon.geddsproconcore.datastreamprocessorconnectors.IDSPSinkConnector;
 import de.tuberlin.mcc.geddsprocon.geddsproconcore.datastreamprocessorconnectors.SocketPool;
 import de.tuberlin.mcc.geddsprocon.geddsproconcore.messagebuffer.IMessageBufferFunction;
-import de.tuberlin.mcc.geddsprocon.geddsproconcore.messagebuffer.MessageBuffer;
-import org.apache.commons.lang.SerializationUtils;
-import org.apache.flink.api.common.state.ListState;
-import org.apache.flink.api.common.state.ListStateDescriptor;
-import org.apache.flink.api.common.typeinfo.TypeHint;
-import org.apache.flink.api.common.typeinfo.TypeInformation;
 import org.apache.flink.api.java.tuple.Tuple;
 import org.apache.flink.configuration.Configuration;
-import org.apache.flink.runtime.state.FunctionInitializationContext;
-import org.apache.flink.runtime.state.FunctionSnapshotContext;
-import org.apache.flink.streaming.api.checkpoint.CheckpointedFunction;
 import org.apache.flink.streaming.api.functions.sink.RichSinkFunction;
 import org.zeromq.ZMsg;
 
@@ -29,9 +19,6 @@ public class FlinkSink extends RichSinkFunction<Serializable> implements IDSPSin
     private final DSPConnectorConfig config;
     private String messageBufferConnectionString;
     private volatile boolean init = false;
-    private MessageBuffer messageBuffer;
-
-    private ListState<byte[]> checkpointedState;
 
     public FlinkSink(DSPConnectorConfig config) {
         this.messageBufferConnectionString = "ipc:///" + config.getBufferConnectionString();
@@ -60,7 +47,7 @@ public class FlinkSink extends RichSinkFunction<Serializable> implements IDSPSin
             if(this.transform && value instanceof Tuple)
                 value = TupleTransformer.transformToIntermediateTuple((Tuple)value);
 
-            byte[] byteMessage = SerializationUtils.serialize(value);
+            byte[] byteMessage = SerializationTool.serialize(value);
 
             // block while the buffer is full
             while(DSPManager.getInstance().getBuffer(this.messageBufferConnectionString).isFull()) {}

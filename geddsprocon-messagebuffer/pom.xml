@@ -64,7 +64,7 @@
                     <archive>
                         <manifest>
                             <addClasspath>true</addClasspath>
-                            <mainClass>de.tuberlin.mcc.geddsprocon.geddsproconcore.messagebuffer.MessageBufferProcess</mainClass>
+                            <mainClass>de.tuberlin.mcc.geddsprocon.geddsproconmessagebuffer.MessageBufferProcess</mainClass>
                         </manifest>
                     </archive>
                 </configuration>

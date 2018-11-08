@@ -1,13 +1,11 @@
 package de.tuberlin.mcc.geddsprocon.geddsproconcore.datastreamprocessorconnectors.flinkconnectors;
 
 import de.tuberlin.mcc.geddsprocon.geddsproconcore.DSPConnectorConfig;
-import de.tuberlin.mcc.geddsprocon.geddsproconcore.DSPConnectorFactory;
 import de.tuberlin.mcc.geddsprocon.geddsproconcore.DSPManager;
+import de.tuberlin.mcc.geddsprocon.geddsproconcore.common.SerializationTool;
 import de.tuberlin.mcc.geddsprocon.geddsproconcore.datastreamprocessorconnectors.IDSPSourceConnector;
 import de.tuberlin.mcc.geddsprocon.geddsproconcore.datastreamprocessorconnectors.SocketPool;
 import de.tuberlin.mcc.geddsprocon.geddsproconcore.messagebuffer.IMessageBufferFunction;
-import de.tuberlin.mcc.geddsprocon.geddsproconcore.messagebuffer.MessageBuffer;
-import org.apache.commons.lang.SerializationUtils;
 import org.apache.flink.streaming.api.functions.source.SourceFunction;
 import org.zeromq.ZFrame;
 import org.zeromq.ZMsg;
@@ -53,7 +51,7 @@ public class FlinkSource implements SourceFunction<Serializable>, IDSPSourceConn
 
                 while ((byteMessage = receiveData(this.host, this.port)) != null) {
 
-                    Serializable message = (Serializable)SerializationUtils.deserialize(byteMessage);
+                    Serializable message = (Serializable)SerializationTool.deserialize(byteMessage);
 
                     if(message instanceof de.tuberlin.mcc.geddsprocon.geddsproconcore.tuple.Tuple && this.transform)
                         message = TupleTransformer.transformFromIntermediateTuple((de.tuberlin.mcc.geddsprocon.geddsproconcore.tuple.Tuple)message);
@@ -90,7 +88,7 @@ public class FlinkSource implements SourceFunction<Serializable>, IDSPSourceConn
     public synchronized ZMsg flush(ZMsg messages) {
         for(ZFrame frame : messages) {
 
-            Serializable message = (Serializable)SerializationUtils.deserialize(frame.getData());
+            Serializable message = (Serializable)SerializationTool.deserialize(frame.getData());
 
             if(message instanceof de.tuberlin.mcc.geddsprocon.geddsproconcore.tuple.Tuple && this.transform)
                 message = TupleTransformer.transformFromIntermediateTuple((de.tuberlin.mcc.geddsprocon.geddsproconcore.tuple.Tuple)message);
