@@ -11,5 +11,6 @@
     <modules>
         <module>geddsprocon-core</module>
         <module>geddsprocon-messagebuffer</module>
+        <module>geddsprocon-examples</module>
     </modules>
 </project>
