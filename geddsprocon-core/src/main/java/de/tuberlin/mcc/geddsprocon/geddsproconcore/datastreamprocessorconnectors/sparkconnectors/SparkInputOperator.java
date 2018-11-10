@@ -3,7 +3,7 @@ package de.tuberlin.mcc.geddsprocon.geddsproconcore.datastreamprocessorconnector
 import de.tuberlin.mcc.geddsprocon.geddsproconcore.DSPConnectorConfig;
 import de.tuberlin.mcc.geddsprocon.geddsproconcore.DSPManager;
 import de.tuberlin.mcc.geddsprocon.geddsproconcore.common.SerializationTool;
-import de.tuberlin.mcc.geddsprocon.geddsproconcore.datastreamprocessorconnectors.IDSPSourceConnector;
+import de.tuberlin.mcc.geddsprocon.geddsproconcore.datastreamprocessorconnectors.IDSPInputOperator;
 import de.tuberlin.mcc.geddsprocon.geddsproconcore.datastreamprocessorconnectors.SocketPool;
 import de.tuberlin.mcc.geddsprocon.geddsproconcore.messagebuffer.IMessageBufferFunction;
 import org.apache.spark.storage.StorageLevel;
@@ -13,7 +13,7 @@ import org.zeromq.ZMsg;
 
 import java.io.Serializable;
 
-public class SparkSource extends Receiver<Serializable> implements IDSPSourceConnector, IMessageBufferFunction {
+public class SparkInputOperator extends Receiver<Serializable> implements IDSPInputOperator, IMessageBufferFunction {
 
     private String host;
     private int port;
@@ -22,7 +22,7 @@ public class SparkSource extends Receiver<Serializable> implements IDSPSourceCon
     private String messageBufferConnectionString;
     private volatile boolean init = false;
 
-    public SparkSource (DSPConnectorConfig config) {
+    public SparkInputOperator(DSPConnectorConfig config) {
         super(StorageLevel.MEMORY_AND_DISK_2());
         this.messageBufferConnectionString = "ipc:///" + config.getBufferConnectionString();
         this.config = config;
@@ -89,6 +89,7 @@ public class SparkSource extends Receiver<Serializable> implements IDSPSourceCon
             if(message instanceof de.tuberlin.mcc.geddsprocon.geddsproconcore.tuple.Tuple && this.transform)
                 message = (Serializable)TupleTransformer.transformFromIntermediateTuple((de.tuberlin.mcc.geddsprocon.geddsproconcore.tuple.Tuple)message);
 
+            System.out.println("storing");
             store(message);
         }
 

@@ -3,7 +3,7 @@ package de.tuberlin.mcc.geddsprocon.geddsproconcore.datastreamprocessorconnector
 import de.tuberlin.mcc.geddsprocon.geddsproconcore.DSPConnectorConfig;
 import de.tuberlin.mcc.geddsprocon.geddsproconcore.DSPManager;
 import de.tuberlin.mcc.geddsprocon.geddsproconcore.common.SerializationTool;
-import de.tuberlin.mcc.geddsprocon.geddsproconcore.datastreamprocessorconnectors.IDSPSinkConnector;
+import de.tuberlin.mcc.geddsprocon.geddsproconcore.datastreamprocessorconnectors.IDSPOutputOperator;
 import de.tuberlin.mcc.geddsprocon.geddsproconcore.messagebuffer.IMessageBufferFunction;
 import org.apache.spark.api.java.JavaRDDLike;
 import org.apache.spark.api.java.function.VoidFunction;
@@ -11,13 +11,13 @@ import org.zeromq.ZMsg;
 
 import java.io.Serializable;
 
-public class SparkSink<T extends JavaRDDLike> implements IDSPSinkConnector, VoidFunction<T>, IMessageBufferFunction {
+public class SparkOutputOperator<T extends JavaRDDLike> implements IDSPOutputOperator, VoidFunction<T>, IMessageBufferFunction {
     private boolean transform;
     private String messageBufferConnectionString;
     private final DSPConnectorConfig config;
     private volatile boolean init = false;
 
-    public SparkSink(DSPConnectorConfig config) {
+    public SparkOutputOperator(DSPConnectorConfig config) {
         this.config = config;
         this.transform = config.getTransform();
         this.messageBufferConnectionString = "ipc:///" +  config.getBufferConnectionString();

@@ -14,7 +14,7 @@ import org.apache.flink.streaming.api.functions.source.SourceFunction;
 import org.apache.flink.util.Collector;
 import org.zeromq.ZMQ;
 
-public class FlinkOutputOperator {
+public class FlinkOutputOperatorExample {
 
     public static class Splitter implements FlatMapFunction<String, Tuple2<String, Integer>> {
         @Override
@@ -43,13 +43,13 @@ public class FlinkOutputOperator {
         }
 
         DataStream<String> dataStream = env
-                .addSource((SourceFunction)DSPConnectorFactory.getInstance().createSourceConnector(new DSPConnectorConfig.Builder("192.168.56.102", 9665)
+                .addSource((SourceFunction)DSPConnectorFactory.getInstance().createInputOperator(new DSPConnectorConfig.Builder("192.168.56.102", 9665)
                         .withSocketType(SocketPool.SocketType.PULL)
                         .withDSP("flink")
                         .build()), TypeInformation.of(String.class))
                 .flatMap(new Splitter());
 
-        dataStream.addSink((SinkFunction)DSPConnectorFactory.getInstance().createSinkConnector(new DSPConnectorConfig.Builder("192.168.56.102", 9656)
+        dataStream.addSink((SinkFunction)DSPConnectorFactory.getInstance().createOutputOperator(new DSPConnectorConfig.Builder("192.168.56.102", 9656)
                 .withDSP("flink")
                 .withHWM(20)
                 .withBufferConnectorString("sendbuffer")

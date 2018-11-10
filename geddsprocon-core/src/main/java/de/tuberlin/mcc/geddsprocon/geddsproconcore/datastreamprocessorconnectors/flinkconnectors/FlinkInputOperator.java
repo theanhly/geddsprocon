@@ -3,7 +3,7 @@ package de.tuberlin.mcc.geddsprocon.geddsproconcore.datastreamprocessorconnector
 import de.tuberlin.mcc.geddsprocon.geddsproconcore.DSPConnectorConfig;
 import de.tuberlin.mcc.geddsprocon.geddsproconcore.DSPManager;
 import de.tuberlin.mcc.geddsprocon.geddsproconcore.common.SerializationTool;
-import de.tuberlin.mcc.geddsprocon.geddsproconcore.datastreamprocessorconnectors.IDSPSourceConnector;
+import de.tuberlin.mcc.geddsprocon.geddsproconcore.datastreamprocessorconnectors.IDSPInputOperator;
 import de.tuberlin.mcc.geddsprocon.geddsproconcore.datastreamprocessorconnectors.SocketPool;
 import de.tuberlin.mcc.geddsprocon.geddsproconcore.messagebuffer.IMessageBufferFunction;
 import org.apache.flink.streaming.api.functions.source.SourceFunction;
@@ -12,7 +12,7 @@ import org.zeromq.ZMsg;
 
 import java.io.Serializable;
 
-public class FlinkSource implements SourceFunction<Serializable>, IDSPSourceConnector, IMessageBufferFunction {
+public class FlinkInputOperator implements SourceFunction<Serializable>, IDSPInputOperator, IMessageBufferFunction {
 
     private String host;
     private int port;
@@ -24,7 +24,7 @@ public class FlinkSource implements SourceFunction<Serializable>, IDSPSourceConn
     private String messageBufferConnectionString;
     private volatile boolean init = false;
 
-    public FlinkSource(DSPConnectorConfig config) {
+    public FlinkInputOperator(DSPConnectorConfig config) {
         this.config = config;
         this.messageBufferConnectionString = "ipc:///" + config.getBufferConnectionString();
         this.host = this.config.getHost();

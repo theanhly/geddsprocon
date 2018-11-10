@@ -1,9 +1,7 @@
 package de.tuberlin.mcc.geddsprocon.geddsproconcore;
 
-import de.tuberlin.mcc.geddsprocon.geddsproconcore.datastreamprocessorconnectors.IDSPSinkConnector;
-import de.tuberlin.mcc.geddsprocon.geddsproconcore.datastreamprocessorconnectors.IDSPSourceConnector;
+import de.tuberlin.mcc.geddsprocon.geddsproconcore.datastreamprocessorconnectors.IDSPOutputOperator;
 import de.tuberlin.mcc.geddsprocon.geddsproconcore.datastreamprocessorconnectors.SocketPool;
-import de.tuberlin.mcc.geddsprocon.geddsproconcore.messagebuffer.IMessageBufferFunction;
 import de.tuberlin.mcc.geddsprocon.geddsproconcore.messagebuffer.MessageBuffer;
 import de.tuberlin.mcc.geddsprocon.geddsproconcore.tuple.Tuple3;
 
@@ -73,7 +71,7 @@ public class DSPManager {
         }
     }
 
-    public void initiateOutputOperator(DSPConnectorConfig config,  IDSPSinkConnector sink) {
+    public void initiateOutputOperator(DSPConnectorConfig config,  IDSPOutputOperator sink) {
         // if no sockettype is defined use the default socket type
         SocketPool.getInstance().createSockets(config.getSocketType() == SocketPool.SocketType.DEFAULT ? SocketPool.SocketType.ROUTER : SocketPool.SocketType.PUSH, config);
         // initiate the buffer. make it 20 for now for testing purposes. later get the buffer size depending on the hwm (?)

@@ -3,7 +3,7 @@ package de.tuberlin.mcc.geddsprocon.geddsproconcore.datastreamprocessorconnector
 import de.tuberlin.mcc.geddsprocon.geddsproconcore.DSPConnectorConfig;
 import de.tuberlin.mcc.geddsprocon.geddsproconcore.DSPManager;
 import de.tuberlin.mcc.geddsprocon.geddsproconcore.common.SerializationTool;
-import de.tuberlin.mcc.geddsprocon.geddsproconcore.datastreamprocessorconnectors.IDSPSinkConnector;
+import de.tuberlin.mcc.geddsprocon.geddsproconcore.datastreamprocessorconnectors.IDSPOutputOperator;
 import de.tuberlin.mcc.geddsprocon.geddsproconcore.datastreamprocessorconnectors.SocketPool;
 import de.tuberlin.mcc.geddsprocon.geddsproconcore.messagebuffer.IMessageBufferFunction;
 import org.apache.flink.api.java.tuple.Tuple;
@@ -13,14 +13,14 @@ import org.zeromq.ZMsg;
 
 import java.io.Serializable;
 
-public class FlinkSink extends RichSinkFunction<Serializable> implements IDSPSinkConnector, IMessageBufferFunction {
+public class FlinkOutputOperator extends RichSinkFunction<Serializable> implements IDSPOutputOperator, IMessageBufferFunction {
     private boolean transform;
     private volatile boolean isRunning = true;
     private final DSPConnectorConfig config;
     private String messageBufferConnectionString;
     private volatile boolean init = false;
 
-    public FlinkSink(DSPConnectorConfig config) {
+    public FlinkOutputOperator(DSPConnectorConfig config) {
         this.messageBufferConnectionString = "ipc:///" + config.getBufferConnectionString();
         this.config = config;
         this.transform = config.getTransform();

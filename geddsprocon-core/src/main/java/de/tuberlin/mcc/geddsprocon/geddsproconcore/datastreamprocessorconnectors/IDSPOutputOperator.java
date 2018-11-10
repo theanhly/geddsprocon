@@ -2,7 +2,7 @@ package de.tuberlin.mcc.geddsprocon.geddsproconcore.datastreamprocessorconnector
 
 import de.tuberlin.mcc.geddsprocon.geddsproconcore.messagebuffer.IMessageBufferFunction;
 
-public interface IDSPSinkConnector {
+public interface IDSPOutputOperator {
 
     /**
      * return the buffer function which determines what to do with the byte message. Writing it

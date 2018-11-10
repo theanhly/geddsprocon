@@ -1,6 +1,6 @@
 package de.tuberlin.mcc.geddsprocon.geddsproconcore.datastreamprocessorconnectors;
 
-public interface IDSPSourceConnector {
+public interface IDSPInputOperator {
 
     /**
      * Method determines the way the input operator (source) is receiving the data from an output operator (sink)

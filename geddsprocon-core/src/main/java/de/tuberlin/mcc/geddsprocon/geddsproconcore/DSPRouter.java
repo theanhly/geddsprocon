@@ -34,6 +34,9 @@ public class DSPRouter implements Runnable, IMessageBufferListener {
         this.socket = SocketPool.getInstance().getOrCreateSocket(this.host, this.port);
         this.resendPrevBuffer = false;
         this.lastReceivedMessageNumber = -1;
+
+        if(messageBufferConnectionString == null || messageBufferConnectionString.isEmpty())
+            System.err.println("Buffer string cannot be null or empty");
     }
 
     @Override

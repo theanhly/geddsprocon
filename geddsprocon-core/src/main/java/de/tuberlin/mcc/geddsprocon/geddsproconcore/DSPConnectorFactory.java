@@ -1,11 +1,11 @@
 package de.tuberlin.mcc.geddsprocon.geddsproconcore;
 
-import de.tuberlin.mcc.geddsprocon.geddsproconcore.datastreamprocessorconnectors.IDSPSourceConnector;
-import de.tuberlin.mcc.geddsprocon.geddsproconcore.datastreamprocessorconnectors.IDSPSinkConnector;
-import de.tuberlin.mcc.geddsprocon.geddsproconcore.datastreamprocessorconnectors.flinkconnectors.FlinkSink;
-import de.tuberlin.mcc.geddsprocon.geddsproconcore.datastreamprocessorconnectors.flinkconnectors.FlinkSource;
-import de.tuberlin.mcc.geddsprocon.geddsproconcore.datastreamprocessorconnectors.sparkconnectors.SparkSink;
-import de.tuberlin.mcc.geddsprocon.geddsproconcore.datastreamprocessorconnectors.sparkconnectors.SparkSource;
+import de.tuberlin.mcc.geddsprocon.geddsproconcore.datastreamprocessorconnectors.IDSPInputOperator;
+import de.tuberlin.mcc.geddsprocon.geddsproconcore.datastreamprocessorconnectors.IDSPOutputOperator;
+import de.tuberlin.mcc.geddsprocon.geddsproconcore.datastreamprocessorconnectors.flinkconnectors.FlinkOutputOperator;
+import de.tuberlin.mcc.geddsprocon.geddsproconcore.datastreamprocessorconnectors.flinkconnectors.FlinkInputOperator;
+import de.tuberlin.mcc.geddsprocon.geddsproconcore.datastreamprocessorconnectors.sparkconnectors.SparkOutputOperator;
+import de.tuberlin.mcc.geddsprocon.geddsproconcore.datastreamprocessorconnectors.sparkconnectors.SparkInputOperator;
 
 
 public class DSPConnectorFactory<T extends Object> {
@@ -31,13 +31,13 @@ public class DSPConnectorFactory<T extends Object> {
         public static final String SECONDARY   = "SECONDARY";
     }
 
-    public IDSPSourceConnector createSourceConnector(DSPConnectorConfig config) {
+    public IDSPInputOperator createInputOperator(DSPConnectorConfig config) {
         try {
             switch(config.getDSP()) {
                 case FLINK:
-                    return  new FlinkSource(config);
+                    return  new FlinkInputOperator(config);
                 case SPARK:
-                    return new SparkSource(config);
+                    return new SparkInputOperator(config);
                 default:
                     break;
             }
@@ -48,13 +48,13 @@ public class DSPConnectorFactory<T extends Object> {
         return null;
     }
 
-    public IDSPSinkConnector createSinkConnector(DSPConnectorConfig config) {
+    public IDSPOutputOperator createOutputOperator(DSPConnectorConfig config) {
         try {
             switch(config.getDSP()) {
                 case FLINK:
-                    return new FlinkSink(config);
+                    return new FlinkOutputOperator(config);
                 case SPARK:
-                    return new SparkSink<>(config);
+                    return new SparkOutputOperator<>(config);
                 default:
                     break;
             }

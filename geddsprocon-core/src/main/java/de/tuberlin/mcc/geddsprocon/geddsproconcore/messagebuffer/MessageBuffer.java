@@ -106,6 +106,7 @@ public class MessageBuffer {
             }
         }
 
+        System.out.println("Init buffer with connection string: " + connectionString);
         return connectionString;
     }
 
