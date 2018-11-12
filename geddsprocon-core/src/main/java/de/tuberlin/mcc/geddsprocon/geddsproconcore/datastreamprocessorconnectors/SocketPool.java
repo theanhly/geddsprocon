@@ -139,6 +139,7 @@ public class SocketPool {
                 socket = this.context.socket(ZMQ.ROUTER);
                 socket.setRouterMandatory(true);
                 socket.setSendTimeOut(config.getTimeout());
+                socket.setReceiveTimeOut(config.getTimeout());
                 socket.setHWM(0);
                 socket.bind("tcp://"+  key);
                 break;
@@ -187,6 +188,7 @@ public class SocketPool {
     }
 
     public synchronized void stopSockets(DSPConnectorConfig config) {
+        System.err.println("ERROR: STOPPING SOCKETS");
         for(Tuple2<String, Integer> tuple : config.getAddresses())
             stopSocket(tuple.f0, tuple.f1);
 

@@ -106,7 +106,7 @@ public class MessageBuffer {
             }
         }
 
-        System.out.println("Init buffer with connection string: " + connectionString);
+        System.out.println("Init buffer with connection string: " + connectionString + " @Thread-ID: " + Thread.currentThread().getId());
         return connectionString;
     }
 

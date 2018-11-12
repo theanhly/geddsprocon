@@ -14,12 +14,14 @@ public class DSPManager {
     private ArrayList<Thread> requesterThreads;
     private String messageBufferConnectionString;
     private HashMap<String, MessageBuffer> bufferMap;
+    private final Object dspManagerLock = new Object();
 
     private static DSPManager ourInstance = new DSPManager();
 
     public static DSPManager getInstance() {
         return ourInstance;
     }
+
 
     private DSPManager() {
         this.addresses = new ArrayList<>();
@@ -99,5 +101,9 @@ public class DSPManager {
             return this.bufferMap.get(messageBufferConnectionString);
 
         return null;
+    }
+
+    public Object getDspManagerLock() {
+        return  this.dspManagerLock;
     }
 }

@@ -1,5 +1,6 @@
 package de.tuberlin.mcc.geddsprocon.geddsproconcore;
 
+import com.google.common.base.Strings;
 import de.tuberlin.mcc.geddsprocon.geddsproconcore.datastreamprocessorconnectors.SocketPool;
 import de.tuberlin.mcc.geddsprocon.geddsproconcore.messagebuffer.IMessageBufferFunction;
 import de.tuberlin.mcc.geddsprocon.geddsproconcore.messagebuffer.IMessageBufferListener;
@@ -44,40 +45,42 @@ public class DSPRouter implements Runnable, IMessageBufferListener {
 
 
         while(true) {
-
+            //System.out.println("Trying to receive");
             ZMsg msg = ZMsg.recvMsg(this.socket);
 
-            //  First frame is address
-            ZFrame address = msg.pop();
+            if(msg != null && !msg.isEmpty()) {
+                //  First frame is address
+                ZFrame address = msg.pop();
 
-            //  Second frame is empty in a REQ socket. Second frame of DEALER socket is not empty
-            String empty = new String(msg.pop().getData());
-            assert (empty.length() == 0);
+                //  Second frame is empty in a REQ socket. Second frame of DEALER socket is not empty
+                String empty = new String(msg.pop().getData());
+                assert (empty.length() == 0);
 
-            String ready = new String(msg.pop().getData());
-            assert(ready.length() > 0);
+                String ready = new String(msg.pop().getData());
+                assert(ready.length() > 0);
 
-            this.lastReceivedMessageNumber = Math.max(Integer.parseInt(msg.pop().toString()), this.lastReceivedMessageNumber);
+                this.lastReceivedMessageNumber = Math.max(Integer.parseInt(msg.pop().toString()), this.lastReceivedMessageNumber);
 
-            if(ready.equals(DSPConnectorFactory.ConnectorType.PRIMARY)) {
-                //System.out.println(DSPConnectorFactory.ConnectorType.PRIMARY + " message received");
+                if(ready.equals(DSPConnectorFactory.ConnectorType.PRIMARY)) {
+                    //System.out.println(DSPConnectorFactory.ConnectorType.PRIMARY + " message received");
 
-                if(reply(address)) {
-                    this.temporaryPrimary = address;
-                } else {
-                    System.out.println("Message could not be sent.");
+                    if(reply(address)) {
+                        this.temporaryPrimary = address;
+                    } else {
+                        System.out.println("Message could not be sent.");
+                    }
+                } else if(ready.equals(DSPConnectorFactory.ConnectorType.SECONDARY)) {
+                    //System.out.println(DSPConnectorFactory.ConnectorType.SECONDARY +" message received");
+
+                    if(this.temporaryPrimary != null && this.temporaryPrimary.hasData() && this.temporaryPrimary.getData().equals(address.getData()))
+                        reply(address);
+                    else if(DSPManager.getInstance().getBuffer(this.messageBufferConnectionString).isFull()) {
+                        this.temporaryPrimary = address.duplicate();
+                        reply(address);
+                    }
+                    else if(this.endpointSet.add(address))
+                        this.endpointQueue.add(address);
                 }
-            } else if(ready.equals(DSPConnectorFactory.ConnectorType.SECONDARY)) {
-                //System.out.println(DSPConnectorFactory.ConnectorType.SECONDARY +" message received");
-
-                if(this.temporaryPrimary != null && this.temporaryPrimary.hasData() && this.temporaryPrimary.getData().equals(address.getData()))
-                    reply(address);
-                else if(DSPManager.getInstance().getBuffer(this.messageBufferConnectionString).isFull()) {
-                    this.temporaryPrimary = address.duplicate();
-                    reply(address);
-                }
-                else if(this.endpointSet.add(address))
-                    this.endpointQueue.add(address);
             }
         }
     }

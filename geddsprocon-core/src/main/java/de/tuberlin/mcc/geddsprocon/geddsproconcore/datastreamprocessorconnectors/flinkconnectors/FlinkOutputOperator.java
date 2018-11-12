@@ -18,12 +18,13 @@ public class FlinkOutputOperator extends RichSinkFunction<Serializable> implemen
     private volatile boolean isRunning = true;
     private final DSPConnectorConfig config;
     private String messageBufferConnectionString;
-    private volatile boolean init = false;
+    private volatile boolean init;
 
     public FlinkOutputOperator(DSPConnectorConfig config) {
         this.messageBufferConnectionString = "ipc:///" + config.getBufferConnectionString();
         this.config = config;
         this.transform = config.getTransform();
+        this.init = false;
     }
 
     @Override
@@ -38,21 +39,25 @@ public class FlinkOutputOperator extends RichSinkFunction<Serializable> implemen
      */
     @Override
     public void invoke(Serializable value, Context ctx) throws Exception {
-        if(!init) {
-            DSPManager.getInstance().initiateOutputOperator(config, this);
-            this.init = true;
-        }
+        synchronized (DSPManager.getInstance().getDspManagerLock()) {
+            if(!init) {
+                System.out.println("Output Op @Thread-ID: " + Thread.currentThread().getId() + " Init-Before: " + this.init);
+                DSPManager.getInstance().initiateOutputOperator(config, this);
+                this.init = true;
+                System.out.println("Output Op @Thread-ID: " + Thread.currentThread().getId() + " Init-After: " + this.init);
+            }
 
-        if(this.isRunning && this.init) {
-            if(this.transform && value instanceof Tuple)
-                value = TupleTransformer.transformToIntermediateTuple((Tuple)value);
+            if(this.isRunning && this.init) {
+                if(this.transform && value instanceof Tuple)
+                    value = TupleTransformer.transformToIntermediateTuple((Tuple)value);
 
-            byte[] byteMessage = SerializationTool.serialize(value);
+                byte[] byteMessage = SerializationTool.serialize(value);
 
-            // block while the buffer is full
-            while(DSPManager.getInstance().getBuffer(this.messageBufferConnectionString).isFull()) {}
+                // block while the buffer is full
+                while(DSPManager.getInstance().getBuffer(this.messageBufferConnectionString).isFull()) {}
 
-            DSPManager.getInstance().getBuffer(this.messageBufferConnectionString).writeBuffer(byteMessage);
+                DSPManager.getInstance().getBuffer(this.messageBufferConnectionString).writeBuffer(byteMessage);
+            }
         }
     }
 

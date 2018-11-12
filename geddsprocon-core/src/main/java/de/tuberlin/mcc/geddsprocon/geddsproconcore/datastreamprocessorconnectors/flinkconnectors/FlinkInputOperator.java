@@ -39,9 +39,12 @@ public class FlinkInputOperator implements SourceFunction<Serializable>, IDSPInp
     }
 
     private synchronized void collect(SourceContext<Serializable> ctx) {
-        if(!this.init) {
-            DSPManager.getInstance().initiateInputOperator(this.config);
-            this.init = true;
+        synchronized (DSPManager.getInstance().getDspManagerLock()) {
+            if(!this.init) {
+                DSPManager.getInstance().initiateInputOperator(this.config);
+                this.init = true;
+            }
+
         }
 
         while(isRunning && this.init) {

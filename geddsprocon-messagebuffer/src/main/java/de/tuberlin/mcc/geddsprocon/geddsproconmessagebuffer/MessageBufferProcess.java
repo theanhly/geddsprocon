@@ -47,10 +47,10 @@ public class MessageBufferProcess {
                     byte[] data = receivedMessage.pop().getData();
                     message.add(data);
                     socket.send("WRITE_SUCCESS");
-                    System.out.println("WRITE end.");
+                    //System.out.println("WRITE end.");
                 } else if(command.equals("PEEKBUFFER")) {
                     message.send(socket, false);
-                    System.out.println("PEEKBUFFER end.");
+                    //System.out.println("PEEKBUFFER end.");
                 } else if(command.equals("CLEARBUFFER")) {
                     if(previousMessage != null)
                         previousMessage.destroy();
@@ -60,26 +60,26 @@ public class MessageBufferProcess {
                     if(addSentMessagesFrame)
                         message.add(Long.toString(++sentMessages));
                     socket.send("CLEAR_SUCCESS");
-                    System.out.println("CLEARBUFFER end.");
+                    //System.out.println("CLEARBUFFER end.");
                 } else if(command.equals("PEEKPREVBUFFER")) {
                     if(previousMessage != null)
                         previousMessage.duplicate().send(socket, false);
                     else
                         message.duplicate().send(socket, false);
 
-                    System.out.println("PEEKPREVBUFFER end.");
+                    //System.out.println("PEEKPREVBUFFER end.");
                 } else if(command.equals("END")) {
-                    System.out.println("END received");
+                    //System.out.println("END received");
                     socket.send("END_SUCCESS");
                     break;
                 } else if (command.equals("MESSAGECOUNT")) {
-                    System.out.println("MESSAGECOUNT received");
+                    //System.out.println("MESSAGECOUNT received");
                     socket.send(Integer.toString(addSentMessagesFrame ? message.toArray().length - 1 : message.toArray().length));
                 } else if (command.equals("SENTMESSAGES")) {
                     //System.out.println("SENTMESSAGES received");
                     socket.send(Long.toString(sentMessages));
                 } else {
-                    System.out.println("Unknown command received: " + command);
+                    //System.out.println("Unknown command received: " + command);
                     socket.send(command);
                 }
 
