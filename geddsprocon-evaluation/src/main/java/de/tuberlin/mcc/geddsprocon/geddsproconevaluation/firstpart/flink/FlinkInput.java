@@ -16,7 +16,7 @@ public class FlinkInput {
 
     public static void main(String[] args) {
         try{
-            String host = "localhost";
+            String host = "192.168.56.102";
             int inputPort = 9656;
 
             StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
@@ -24,7 +24,7 @@ public class FlinkInput {
             DataStream<Tuple2<String, Integer>> dataStream = env
                     .addSource((SourceFunction)DSPConnectorFactory.getInstance().createInputOperator(new DSPConnectorConfig.Builder()
                             .withDSP("flink")
-                            .withHWM(10000)
+                            .withHWM(300000)
                             .withBufferConnectorString("recvbuffer")
                             .withRequestAddress(host, inputPort, DSPConnectorFactory.ConnectorType.PRIMARY)
                             .build()), TypeInfoParser.parse("Tuple2<String,Integer>"))

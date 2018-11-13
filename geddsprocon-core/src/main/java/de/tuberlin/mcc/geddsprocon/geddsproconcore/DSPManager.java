@@ -1,5 +1,6 @@
 package de.tuberlin.mcc.geddsprocon.geddsproconcore;
 
+import de.tuberlin.mcc.geddsprocon.geddsproconcore.datastreamprocessorconnectors.IDSPInputOperator;
 import de.tuberlin.mcc.geddsprocon.geddsproconcore.datastreamprocessorconnectors.IDSPOutputOperator;
 import de.tuberlin.mcc.geddsprocon.geddsproconcore.datastreamprocessorconnectors.SocketPool;
 import de.tuberlin.mcc.geddsprocon.geddsproconcore.messagebuffer.MessageBuffer;
@@ -14,7 +15,9 @@ public class DSPManager {
     private ArrayList<Thread> requesterThreads;
     private String messageBufferConnectionString;
     private HashMap<String, MessageBuffer> bufferMap;
+    private HashMap<IDSPInputOperator, MessageBuffer> inputOpBufferMap;
     private final Object dspManagerLock = new Object();
+    private final Object dspRequesterLock = new Object();
 
     private static DSPManager ourInstance = new DSPManager();
 
@@ -27,6 +30,7 @@ public class DSPManager {
         this.addresses = new ArrayList<>();
         this.requesterThreads = new ArrayList<>();
         this.bufferMap = new HashMap<>();
+        this.inputOpBufferMap = new HashMap<>();
     }
 
     /**
@@ -45,35 +49,37 @@ public class DSPManager {
      * Start all DSP requester threads which connect to the output operators and request data.
      * @param config DSP connector config which has all the output operator addresses
      */
-    public void startDSPRequesters(DSPConnectorConfig config) {
+    public void startDSPRequesters(DSPConnectorConfig config, MessageBuffer messageBuffer) {
         this.addresses = config.getRequestAddresses();
 
         for(Tuple3<String, Integer, String> tuple : this.addresses) {
 
-            Thread requesterThread = new Thread(new DSPRequester(tuple.f0, tuple.f1, tuple.f2, this.messageBufferConnectionString));
+            Thread requesterThread = new Thread(new DSPRequester(tuple.f0, tuple.f1, tuple.f2, messageBuffer));
             requesterThread.start();
             this.requesterThreads.add(requesterThread);
         }
     }
 
-    public void initiateInputOperator(DSPConnectorConfig config) {
+    public void initiateInputOperator(DSPConnectorConfig config, IDSPInputOperator inputOp) {
         MessageBuffer messageBuffer = null;
         String messageBufferConnectionString = "";
         if(config.getSocketType() == SocketPool.SocketType.REQ || config.getSocketType() == SocketPool.SocketType.DEFAULT) {
             messageBuffer = new MessageBuffer();
             messageBufferConnectionString = messageBuffer.initiateBuffer(config, false);
+            System.out.println("Init input op: " + Thread.currentThread().getId() + " buffer: " + messageBuffer.hashCode());
         }
-        this.bufferMap.put(messageBufferConnectionString, messageBuffer);
+        //this.bufferMap.put(messageBufferConnectionString, messageBuffer);
 
+        this.inputOpBufferMap.put(inputOp, messageBuffer);
         if(config.getSocketType() == SocketPool.SocketType.PULL) {
             SocketPool.getInstance().createSockets(SocketPool.SocketType.PULL, config);
         } else if(config.getSocketType() == SocketPool.SocketType.REQ || config.getSocketType() == SocketPool.SocketType.DEFAULT) {
             SocketPool.getInstance().createSockets(SocketPool.SocketType.REQ, config);
-            DSPManager.getInstance().initiateBuffer(messageBufferConnectionString).startDSPRequesters(config);
+            startDSPRequesters(config, messageBuffer);
         }
     }
 
-    public void initiateOutputOperator(DSPConnectorConfig config,  IDSPOutputOperator sink) {
+    public void initiateOutputOperator(DSPConnectorConfig config,  IDSPOutputOperator outputOp) {
         // if no sockettype is defined use the default socket type
         SocketPool.getInstance().createSockets(config.getSocketType() == SocketPool.SocketType.DEFAULT ? SocketPool.SocketType.ROUTER : SocketPool.SocketType.PUSH, config);
         // initiate the buffer. make it 20 for now for testing purposes. later get the buffer size depending on the hwm (?)
@@ -82,7 +88,7 @@ public class DSPManager {
         this.bufferMap.put(messageBufferConnectionString, messageBuffer);
 
         // initiate the manager
-        DSPRouter router = new DSPRouter(config.getHost(), config.getPort(), sink.getBufferFunction(), messageBufferConnectionString);
+        DSPRouter router = new DSPRouter(config.getHost(), config.getPort(), outputOp.getBufferFunction(), messageBufferConnectionString);
         // add the manager as a listener to the message buffer
         messageBuffer.addListener(router);
         // start the manager thread
@@ -103,7 +109,16 @@ public class DSPManager {
         return null;
     }
 
+    public MessageBuffer getBuffer(IDSPInputOperator inputOp) {
+        if(this.inputOpBufferMap.containsKey(inputOp))
+            return this.inputOpBufferMap.get(inputOp);
+
+        return null;
+    }
+
     public Object getDspManagerLock() {
         return  this.dspManagerLock;
     }
+
+    public Object getDspRequesterLock() { return this.dspRequesterLock; }
 }

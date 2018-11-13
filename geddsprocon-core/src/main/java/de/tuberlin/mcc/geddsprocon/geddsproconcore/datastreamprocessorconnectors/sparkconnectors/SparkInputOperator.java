@@ -50,7 +50,7 @@ public class SparkInputOperator extends Receiver<Serializable> implements IDSPIn
 
             synchronized (DSPManager.getInstance().getDspManagerLock()) {
                 if(!this.init) {
-                    DSPManager.getInstance().initiateInputOperator(this.config);
+                    DSPManager.getInstance().initiateInputOperator(this.config, this);
                     this.init = true;
                 }
             }

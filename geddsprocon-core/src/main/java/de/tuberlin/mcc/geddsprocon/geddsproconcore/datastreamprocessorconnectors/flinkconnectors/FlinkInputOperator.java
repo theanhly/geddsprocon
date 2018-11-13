@@ -6,13 +6,14 @@ import de.tuberlin.mcc.geddsprocon.geddsproconcore.common.SerializationTool;
 import de.tuberlin.mcc.geddsprocon.geddsproconcore.datastreamprocessorconnectors.IDSPInputOperator;
 import de.tuberlin.mcc.geddsprocon.geddsproconcore.datastreamprocessorconnectors.SocketPool;
 import de.tuberlin.mcc.geddsprocon.geddsproconcore.messagebuffer.IMessageBufferFunction;
+import org.apache.flink.streaming.api.functions.source.RichParallelSourceFunction;
 import org.apache.flink.streaming.api.functions.source.SourceFunction;
 import org.zeromq.ZFrame;
 import org.zeromq.ZMsg;
 
 import java.io.Serializable;
 
-public class FlinkInputOperator implements SourceFunction<Serializable>, IDSPInputOperator, IMessageBufferFunction {
+public class FlinkInputOperator extends RichParallelSourceFunction<Serializable> implements IDSPInputOperator, IMessageBufferFunction {
 
     private String host;
     private int port;
@@ -41,7 +42,7 @@ public class FlinkInputOperator implements SourceFunction<Serializable>, IDSPInp
     private synchronized void collect(SourceContext<Serializable> ctx) {
         synchronized (DSPManager.getInstance().getDspManagerLock()) {
             if(!this.init) {
-                DSPManager.getInstance().initiateInputOperator(this.config);
+                DSPManager.getInstance().initiateInputOperator(this.config, this);
                 this.init = true;
             }
 
@@ -63,9 +64,9 @@ public class FlinkInputOperator implements SourceFunction<Serializable>, IDSPInp
                 }
             } else if(config.getSocketType() == SocketPool.SocketType.REQ || config.getSocketType() == SocketPool.SocketType.DEFAULT) {
 
-                if(!DSPManager.getInstance().getBuffer(this.messageBufferConnectionString).isEmpty()) {
+                if(!DSPManager.getInstance().getBuffer(this).isEmpty()) {
                     this.ctx = ctx;
-                    DSPManager.getInstance().getBuffer(this.messageBufferConnectionString).flushBuffer(this);
+                    DSPManager.getInstance().getBuffer(this).flushBuffer(this);
                 }
             }
         }
