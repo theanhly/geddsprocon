@@ -25,11 +25,15 @@ public class MessageBuffer {
     private final Object bufferLock = new Object();
     private int bufferSize = 1000;
     private byte[][] buffer;
-    private volatile int messages = 0;
+    private volatile int messages;
     private LinkedList<IMessageBufferListener> listener;
     private ZMQ.Socket bufferSocket;
     private final ZMQ.Context context = ZMQ.context(1);
     private boolean init;
+    private ZMsg messageBuffer;
+    private ZMsg previousMessageBuffer;
+    private boolean addSentMessagesFrame;
+    private long sentMessagesID;
 
     public MessageBuffer() {
         this.listener = new LinkedList<>();
@@ -37,6 +41,7 @@ public class MessageBuffer {
         this.init = false;
         this.bufferSocket = this.context.socket(ZMQ.REQ);
         this.bufferSocket.setReceiveTimeOut(5000);
+        messages = 0;
     }
 
     public void addListener(IMessageBufferListener listener) {
@@ -74,8 +79,16 @@ public class MessageBuffer {
 
         }
 
-        String connectionString;
-        for(int i = 0; true; i++) {
+        this.addSentMessagesFrame = addSentMessagesFrame;
+
+        String connectionString = "ipc:///" + config.getBufferConnectionString();
+
+        this.sentMessagesID = 1;
+        this.messageBuffer = new ZMsg();
+        if(this.addSentMessagesFrame)
+            this.messageBuffer.add(Long.toString(sentMessagesID));
+
+        /*for(int i = 0; true; i++) {
             connectionString = Strings.isNullOrEmpty(config.getBufferConnectionString()) ? "ipc:///message-buffer-process-" + i : "ipc:///" + config.getBufferConnectionString();
             this.bufferSocket.connect(connectionString);
             this.bufferSocket.send(this.INIT_MESSAGE);
@@ -104,7 +117,8 @@ public class MessageBuffer {
                     break;
                 }
             }
-        }
+        }*/
+
 
         System.out.println("Init buffer with connection string: " + connectionString + " @Thread-ID: " + Thread.currentThread().getId());
         return connectionString;
@@ -117,6 +131,23 @@ public class MessageBuffer {
     public void writeBuffer(byte[] bytes) {
         // buffer gets overwritten if buffer isn't flushed in time
         synchronized (this.bufferLock) {
+            /*//this.buffer[this.messages%this.bufferSize] = bytes;
+            //System.out.println("===== Message buffer writing start.");
+            ZMsg writeMessage = new ZMsg();
+            writeMessage.add(this.WRITE_MESSAGE);
+            writeMessage.add(bytes);
+            writeMessage.send(this.bufferSocket);
+
+            // do not receive the response in assert since it seems to be non blocking -> results in exception if run in a cluster
+            String response = this.bufferSocket.recvStr();
+            assert(response.equals("WRITE_SUCCESS"));*/
+            //System.out.println("===== Message buffer writing start.");
+            this.messageBuffer.add(bytes);
+
+            this.messages++;
+            //System.out.println("===== Message buffer writing end.");
+
+            /* OLD
             //this.buffer[this.messages%this.bufferSize] = bytes;
             //System.out.println("===== Message buffer writing start.");
             ZMsg writeMessage = new ZMsg();
@@ -130,9 +161,11 @@ public class MessageBuffer {
 
             this.messages++;
             //System.out.println("===== Message buffer writing end.");
+             */
         }
         if(isFull())
         {
+            System.out.println("Buffer full");
             // tell all the listeners that the buffer is full
             for (IMessageBufferListener listener : this.listener ) {
                 listener.bufferIsFullEvent();
@@ -173,12 +206,18 @@ public class MessageBuffer {
     public ZMsg flushBuffer(IMessageBufferFunction bufferFunction, boolean clearBuffer, boolean previousBuffer) {
         synchronized(this.bufferLock) {
             // callback call flushing of buffer
-            if(previousBuffer)
-                this.bufferSocket.send(this.PEEKPREVBUFFER_MESSAGE);
-            else
-                this.bufferSocket.send(this.PEEKBUFFER_MESSAGE);
+            ZMsg messages;
+            if(previousBuffer) {
+                //this.bufferSocket.send(this.PEEKPREVBUFFER_MESSAGE);
+                messages = this.previousMessageBuffer.duplicate();
+            }
+            else {
+                // this.bufferSocket.send(this.PEEKBUFFER_MESSAGE);
+                messages = this.messageBuffer.duplicate();
+            }
 
-            ZMsg messages = bufferFunction.flush(ZMsg.recvMsg(this.bufferSocket));
+            //ZMsg messages = bufferFunction.flush(ZMsg.recvMsg(this.bufferSocket));
+            messages = bufferFunction.flush(messages);
 
             if(clearBuffer)
                 clearBuffer();
@@ -192,13 +231,26 @@ public class MessageBuffer {
      */
     public void clearBuffer() {
         synchronized(this.bufferLock) {
-            this.bufferSocket.send(this.CLEARBUFFER_MESSAGE);
+            /*this.bufferSocket.send(this.CLEARBUFFER_MESSAGE);
 
             //
             String response = this.bufferSocket.recvStr();
+            assert(response.equals("CLEAR_SUCCESS"));*/
+            if(this.previousMessageBuffer != null)
+                this.previousMessageBuffer.destroy();
+
+            this.previousMessageBuffer = this.messageBuffer.duplicate();
+            messageBuffer.destroy();
+            if(this.addSentMessagesFrame)
+                messageBuffer.add(Long.toString(++this.sentMessagesID));
+
+            this.messages = 0;
+
+            /* OLD
+            String response = this.bufferSocket.recvStr();
             assert(response.equals("CLEAR_SUCCESS"));
             this.messages = 0;
-            //Arrays.fill(this.buffer, new byte[]{(byte)0});
+             */
         }
     }
 
@@ -216,8 +268,11 @@ public class MessageBuffer {
      */
     public long getSentMessages() {
         synchronized (this.bufferLock) {
+            /* OLD
             this.bufferSocket.send(this.SENTMESSAGES_MESSAGE);
             return Long.parseLong(this.bufferSocket.recvStr());
+             */
+            return this.sentMessagesID;
         }
     }
 

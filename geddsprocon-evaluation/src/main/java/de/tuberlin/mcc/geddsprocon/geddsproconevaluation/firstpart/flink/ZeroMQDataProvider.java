@@ -28,13 +28,15 @@ public class ZeroMQDataProvider implements Runnable {
             System.out.println("Connecting to hello world server…");
 
             ZMQ.Socket sender = context.socket(ZMQ.PUSH);
+            sender.setSndHWM(100000);
             sender.connect("tcp://" + this.host + ":" + this.port);
 
             sender.send(SerializationTool.serialize("START_DATA"));
-            String tsvFile = "";
             BufferedReader tsvReader = new BufferedReader(new FileReader(this.file));
 
+            // skip first line
             String newLine = tsvReader.readLine();
+            newLine = tsvReader.readLine();
             while(newLine != null && !newLine.isEmpty()) {
                 String[] array = newLine.split("\t");
                 sender.send(SerializationTool.serialize(array[13]));

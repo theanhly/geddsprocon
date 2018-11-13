@@ -19,7 +19,7 @@ public class CompletePipeline {
             Thread zeroMQDataProviderThread = new Thread(new ZeroMQDataProvider(host, port, file));
             zeroMQDataProviderThread.start();
 
-            StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
+            StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment().setParallelism(1);
 
             DataStream<String> dataStream = env
                     .addSource((SourceFunction)DSPConnectorFactory.getInstance().createInputOperator(new DSPConnectorConfig.Builder(host, port)

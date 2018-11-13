@@ -95,7 +95,7 @@ public class DSPRouter implements Runnable, IMessageBufferListener {
             addressFrame = this.endpointQueue.pop();
             this.temporaryPrimary = addressFrame.duplicate();
             this.endpointSet.remove(addressFrame);
-            System.out.println("Address popped");
+            //System.out.println("Address popped");
         } while(!reply(addressFrame));
 
         System.out.println("Reply sent");
@@ -130,7 +130,7 @@ public class DSPRouter implements Runnable, IMessageBufferListener {
         Object bufferLock = DSPManager.getInstance().getBuffer(this.messageBufferConnectionString).getBufferLock();
         synchronized (bufferLock) {
             message.append(DSPManager.getInstance().getBuffer(this.messageBufferConnectionString).flushBuffer(this.bufferFunction, false, resendPrevBuffer));
-            System.out.println("Sending message " + message.toString());
+            //System.out.println("Sending message with message-id: " + message.peek().toString());
             if(message.send(this.socket)) {
                 // only clear buffer after sending has been successful and the previous buffer wasn't sent
                 if(!resendPrevBuffer)
@@ -152,7 +152,7 @@ public class DSPRouter implements Runnable, IMessageBufferListener {
         while(this.endpointQueue.isEmpty() && DSPManager.getInstance().getBuffer(this.messageBufferConnectionString).isFull()) {}
 
         //this.resendPrevBuffer = true;
-        System.out.println("Buffer event");
+        //System.out.println("Buffer event");
         if(DSPManager.getInstance().getBuffer(this.messageBufferConnectionString).isFull())
             reply();
     }

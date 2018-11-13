@@ -16,12 +16,15 @@ public class StringSplitter implements FlatMapFunction<String, Tuple2<String, In
         for (String word: sentence.split(" ")) {
             if(word.equals("START_DATA") || word.equals("END_DATA")) {
                 BufferedWriter writer = new BufferedWriter(new FileWriter("/home/theanhly/Schreibtisch/test.log", true));
+                if(word.equals("START_DATA"))
+                    writer.append("===============START===============\n");
+
                 writer.append(word + ": " + LocalDateTime.now() + "\n");
 
                 if(word.equals("END_DATA")) {
                     System.out.print("SENDING END_DATA");
                     out.collect(new Tuple2<>(word, 1));
-                    writer.append("Counter: " + this.counter + "\n" + "==============================\n");
+                    writer.append("Counter: " + this.counter + "\n" + "===============END===============\n");
                 }
 
                 writer.close();
