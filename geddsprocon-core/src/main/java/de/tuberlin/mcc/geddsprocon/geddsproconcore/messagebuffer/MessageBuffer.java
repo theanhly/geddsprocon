@@ -165,7 +165,7 @@ public class MessageBuffer {
         }
         if(isFull())
         {
-            System.out.println("Buffer full");
+            //System.out.println("Buffer full");
             // tell all the listeners that the buffer is full
             for (IMessageBufferListener listener : this.listener ) {
                 listener.bufferIsFullEvent();

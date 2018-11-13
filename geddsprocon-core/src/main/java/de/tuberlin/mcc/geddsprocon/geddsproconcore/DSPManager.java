@@ -18,6 +18,7 @@ public class DSPManager {
     private HashMap<IDSPInputOperator, MessageBuffer> inputOpBufferMap;
     private final Object dspManagerLock = new Object();
     private final Object dspRequesterLock = new Object();
+    private long lastReceivedMessageID;
 
     private static DSPManager ourInstance = new DSPManager();
 
@@ -31,6 +32,7 @@ public class DSPManager {
         this.requesterThreads = new ArrayList<>();
         this.bufferMap = new HashMap<>();
         this.inputOpBufferMap = new HashMap<>();
+        this.lastReceivedMessageID = -1;
     }
 
     /**
@@ -114,6 +116,14 @@ public class DSPManager {
             return this.inputOpBufferMap.get(inputOp);
 
         return null;
+    }
+
+    public long getLastReceivedMessageID() {
+        return this.lastReceivedMessageID;
+    }
+
+    public void setLastReceivedMessageID(long id) {
+        this.lastReceivedMessageID = id;
     }
 
     public Object getDspManagerLock() {

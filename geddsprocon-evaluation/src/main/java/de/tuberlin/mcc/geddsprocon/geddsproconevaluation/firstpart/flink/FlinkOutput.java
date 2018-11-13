@@ -31,7 +31,7 @@ public class FlinkOutput {
 
             dataStream.addSink((SinkFunction)DSPConnectorFactory.getInstance().createOutputOperator(new DSPConnectorConfig.Builder(host, outPutPort)
                     .withDSP("flink")
-                    .withHWM(1200000)
+                    .withHWM(300000)
                     .withBufferConnectorString("sendbuffer")
                     .withTimeout(5000)
                     .build()));

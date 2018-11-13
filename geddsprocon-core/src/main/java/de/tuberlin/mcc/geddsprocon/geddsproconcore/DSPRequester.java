@@ -13,7 +13,7 @@ public class DSPRequester implements Runnable {
     private String host;
     private int port;
     private String connectorType;
-    private int messageNumber;
+    private long messageNumber;
     private String messageBufferConnectionString;
     private MessageBuffer messageBuffer;
 
@@ -42,16 +42,19 @@ public class DSPRequester implements Runnable {
 
                 synchronized (DSPManager.getInstance().getDspRequesterLock()) {
                     socket.send(this.connectorType, ZMQ.SNDMORE);
-                    socket.send(Integer.toString(this.messageNumber), ZMQ.DONTWAIT);
+                    socket.send(Long.toString(DSPManager.getInstance().getLastReceivedMessageID()), ZMQ.DONTWAIT);
 
                     //System.out.println("Trying to receive @" + this.host + ":" + this.port + " with Thread-ID: " + Thread.currentThread().getId());
 
                     messages = ZMsg.recvMsg(socket);
+
+                    if(messages != null && !Strings.isNullOrEmpty(messages.peek().toString()))
+                        DSPManager.getInstance().setLastReceivedMessageID(Long.parseLong(messages.pop().toString()));
                 }
 
                 if(messages != null && !Strings.isNullOrEmpty(messages.peek().toString())) {
                     //System.out.println("Message received.");
-                    this.messageNumber = Integer.parseInt(messages.pop().toString());
+                    //this.messageNumber = Long.parseLong(messages.pop().toString());
                     for(ZFrame frame : messages) {
                         // block writing to buffer as long the buffer is full
                         while(this.messageBuffer.isFull()) {}
