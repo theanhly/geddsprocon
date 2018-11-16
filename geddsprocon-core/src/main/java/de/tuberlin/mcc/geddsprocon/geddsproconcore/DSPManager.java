@@ -14,7 +14,7 @@ public class DSPManager {
     private ArrayList<Tuple3<String, Integer, String>> addresses;
     private ArrayList<Thread> requesterThreads;
     private String messageBufferConnectionString;
-    private HashMap<String, MessageBuffer> bufferMap;
+    private HashMap<String, MessageBuffer> bufferProcessMap;
     private HashMap<IDSPInputOperator, MessageBuffer> inputOpBufferMap;
     private static final Object dspManagerLock = new Object();
     private static final Object dspRequesterLock = new Object();
@@ -30,7 +30,7 @@ public class DSPManager {
     private DSPManager() {
         this.addresses = new ArrayList<>();
         this.requesterThreads = new ArrayList<>();
-        this.bufferMap = new HashMap<>();
+        this.bufferProcessMap = new HashMap<>();
         this.inputOpBufferMap = new HashMap<>();
         this.lastReceivedMessageID = -1;
     }
@@ -87,7 +87,7 @@ public class DSPManager {
         // initiate the buffer. make it 20 for now for testing purposes. later get the buffer size depending on the hwm (?)
         MessageBuffer messageBuffer = new MessageBuffer();
         String messageBufferConnectionString = messageBuffer.initiateBuffer(config);
-        this.bufferMap.put(messageBufferConnectionString, messageBuffer);
+        this.bufferProcessMap.put(messageBufferConnectionString, messageBuffer);
 
         // initiate the manager
         DSPRouter router = new DSPRouter(config.getHost(), config.getPort(), outputOp.getBufferFunction(), messageBufferConnectionString);
@@ -105,8 +105,8 @@ public class DSPManager {
      * @return The requested message buffer
      */
     public MessageBuffer getBuffer(String messageBufferConnectionString) {
-        if(this.bufferMap.containsKey(messageBufferConnectionString))
-            return this.bufferMap.get(messageBufferConnectionString);
+        if(this.bufferProcessMap.containsKey(messageBufferConnectionString))
+            return this.bufferProcessMap.get(messageBufferConnectionString);
 
         return null;
     }

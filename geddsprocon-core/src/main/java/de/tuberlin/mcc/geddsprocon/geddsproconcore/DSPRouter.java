@@ -130,9 +130,9 @@ public class DSPRouter implements Runnable, IMessageBufferListener {
         Object bufferLock = DSPManager.getInstance().getBuffer(this.messageBufferConnectionString).getBufferLock();
         synchronized (bufferLock) {
             if(resendPrevBuffer)
-                System.out.println("Resending buffer");
-            else
-                System.out.println("Sending new  buffer");
+                System.out.println("Resending buffer: " + this.lastReceivedMessageNumber);
+            /*else
+                System.out.println("Sending new  buffer");*/
             message.append(DSPManager.getInstance().getBuffer(this.messageBufferConnectionString).flushBuffer(this.bufferFunction, false, resendPrevBuffer));
             //System.out.println("Sending message with message-id: " + message.peek().toString());
             if(message.send(this.socket)) {

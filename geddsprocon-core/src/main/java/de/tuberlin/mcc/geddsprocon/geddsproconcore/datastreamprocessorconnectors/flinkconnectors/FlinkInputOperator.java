@@ -6,6 +6,7 @@ import de.tuberlin.mcc.geddsprocon.geddsproconcore.common.SerializationTool;
 import de.tuberlin.mcc.geddsprocon.geddsproconcore.datastreamprocessorconnectors.IDSPInputOperator;
 import de.tuberlin.mcc.geddsprocon.geddsproconcore.datastreamprocessorconnectors.SocketPool;
 import de.tuberlin.mcc.geddsprocon.geddsproconcore.messagebuffer.IMessageBufferFunction;
+import org.apache.flink.configuration.Configuration;
 import org.apache.flink.streaming.api.functions.source.RichParallelSourceFunction;
 import org.apache.flink.streaming.api.functions.source.SourceFunction;
 import org.zeromq.ZFrame;
@@ -35,18 +36,26 @@ public class FlinkInputOperator extends RichParallelSourceFunction<Serializable>
     }
 
     @Override
+    public void open(Configuration parameters) {
+        synchronized (DSPManager.getInstance().getDspManagerLock()) {
+            DSPManager.getInstance().initiateInputOperator(this.config, this);
+            this.init = true;
+        }
+    }
+
+    @Override
     public void run(SourceContext<Serializable> ctx) {
        collect(ctx);
     }
 
     private synchronized void collect(SourceContext<Serializable> ctx) {
-        synchronized (DSPManager.getInstance().getDspManagerLock()) {
+        /*synchronized (DSPManager.getInstance().getDspManagerLock()) {
             if(!this.init) {
                 DSPManager.getInstance().initiateInputOperator(this.config, this);
                 this.init = true;
             }
 
-        }
+        }*/
 
         while(isRunning && this.init) {
             byte[] byteMessage;

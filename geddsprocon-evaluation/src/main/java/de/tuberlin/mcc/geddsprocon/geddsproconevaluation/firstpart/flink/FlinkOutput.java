@@ -8,6 +8,7 @@ import org.apache.flink.streaming.api.datastream.DataStream;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 import org.apache.flink.streaming.api.functions.sink.SinkFunction;
 import org.apache.flink.streaming.api.functions.source.SourceFunction;
+import org.apache.flink.streaming.api.windowing.time.Time;
 
 public class FlinkOutput {
 
@@ -27,14 +28,20 @@ public class FlinkOutput {
                             .withSocketType(SocketPool.SocketType.PULL)
                             .withDSP("flink")
                             .build()), TypeInformation.of(String.class))
-                    .flatMap(new StringSplitter());
+                    .flatMap(new StringSplitter())
+                    .keyBy("f0")
+                    .timeWindow(Time.seconds(5))
+                    .sum("f1")
+                    .flatMap(new TupleMapper());
 
             dataStream.addSink((SinkFunction)DSPConnectorFactory.getInstance().createOutputOperator(new DSPConnectorConfig.Builder(host, outPutPort)
                     .withDSP("flink")
-                    .withHWM(300000)
+                    .withHWM(250000)
                     .withBufferConnectorString("sendbuffer")
                     .withTimeout(5000)
                     .build()));
+
+            //dataStream.print();
 
             env.execute("Window WordCount");
         } catch(Exception ex) {
