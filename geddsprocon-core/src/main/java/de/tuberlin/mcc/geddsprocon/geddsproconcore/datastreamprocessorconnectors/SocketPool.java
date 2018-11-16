@@ -123,7 +123,7 @@ public class SocketPool {
                 socket.setReceiveTimeOut(config.getTimeout());
                 socket.setImmediate(true);
                 socket.setReqRelaxed(true);
-                socket.setHWM(0);
+                socket.setSndHWM(1);
                 socket.connect("tcp://"+  key);
                 break;
             case DEALER:

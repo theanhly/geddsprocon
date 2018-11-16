@@ -19,18 +19,19 @@ public class FlinkInput {
             String host = "192.168.56.102";
             int inputPort = 9656;
 
-            StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
+            StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment().setParallelism(4);
 
             DataStream<Tuple2<String, Integer>> dataStream = env
                     .addSource((SourceFunction)DSPConnectorFactory.getInstance().createInputOperator(new DSPConnectorConfig.Builder()
                             .withDSP("flink")
-                            .withHWM(300000)
+                            .withHWM(250000)
+                            .withTimeout(15000)
                             .withBufferConnectorString("recvbuffer")
                             .withRequestAddress(host, inputPort, DSPConnectorFactory.ConnectorType.PRIMARY)
                             .build()), TypeInfoParser.parse("Tuple2<String,Integer>"))
-                    //.flatMap(new TupleMapper())
+                    .flatMap(new TupleMapper())
                     .keyBy("f0")
-                    .timeWindow(Time.seconds(5))
+                    .timeWindow(Time.seconds(20))
                     .sum("f1");
 
             dataStream.print();

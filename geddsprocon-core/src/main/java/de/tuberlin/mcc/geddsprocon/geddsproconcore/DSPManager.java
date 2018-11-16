@@ -16,9 +16,9 @@ public class DSPManager {
     private String messageBufferConnectionString;
     private HashMap<String, MessageBuffer> bufferMap;
     private HashMap<IDSPInputOperator, MessageBuffer> inputOpBufferMap;
-    private final Object dspManagerLock = new Object();
-    private final Object dspRequesterLock = new Object();
-    private long lastReceivedMessageID;
+    private static final Object dspManagerLock = new Object();
+    private static final Object dspRequesterLock = new Object();
+    private volatile long lastReceivedMessageID;
 
     private static DSPManager ourInstance = new DSPManager();
 

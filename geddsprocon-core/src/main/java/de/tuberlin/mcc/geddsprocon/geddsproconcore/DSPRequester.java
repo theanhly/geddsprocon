@@ -41,15 +41,21 @@ public class DSPRequester implements Runnable {
                 ZMsg messages = new ZMsg();
 
                 synchronized (DSPManager.getInstance().getDspRequesterLock()) {
-                    socket.send(this.connectorType, ZMQ.SNDMORE);
-                    socket.send(Long.toString(DSPManager.getInstance().getLastReceivedMessageID()), ZMQ.DONTWAIT);
+                    while(messages == null || messages.peek() == null || Strings.isNullOrEmpty(messages.peek().toString())) {
+                        socket.send(this.connectorType, ZMQ.SNDMORE);
+                        //System.out.println("DSPManager lock: " + DSPManager.getInstance().hashCode());
+                        //System.out.println("Trying to receive @" + this.host + ":" + this.port + " with Thread-ID: " + Thread.currentThread().getId() + " with last id: " + Long.toString(DSPManager.getInstance().getLastReceivedMessageID()));
+                        socket.send(Long.toString(DSPManager.getInstance().getLastReceivedMessageID()), ZMQ.DONTWAIT);
 
-                    //System.out.println("Trying to receive @" + this.host + ":" + this.port + " with Thread-ID: " + Thread.currentThread().getId());
+                        //System.out.println("Trying to receive @" + this.host + ":" + this.port + " with Thread-ID: " + Thread.currentThread().getId());
 
-                    messages = ZMsg.recvMsg(socket);
+                        messages = ZMsg.recvMsg(socket);
 
-                    if(messages != null && !Strings.isNullOrEmpty(messages.peek().toString()))
-                        DSPManager.getInstance().setLastReceivedMessageID(Long.parseLong(messages.pop().toString()));
+                        if(messages != null && !Strings.isNullOrEmpty(messages.peek().toString())) {
+                            DSPManager.getInstance().setLastReceivedMessageID(Long.parseLong(messages.pop().toString()));
+                            //System.out.println(" Setting last id: " + Long.toString(DSPManager.getInstance().getLastReceivedMessageID()));
+                        }
+                    }
                 }
 
                 if(messages != null && !Strings.isNullOrEmpty(messages.peek().toString())) {
