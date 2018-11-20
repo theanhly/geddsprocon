@@ -31,16 +31,18 @@ public class DSPRequester implements Runnable {
      */
     @Override
     public void run() {
+        System.out.println("Starting requester with connection to: " + this.host + ":" +  this.port + " @Thread-ID: " + Thread.currentThread().getId());
+
         try {
-            ZMQ.Socket socket = SocketPool.getInstance().getOrCreateSocket(this.host, this.port);
+            ZMQ.Socket socket;
             while(true) {
 
                 //might need to lock until receive. can cause ZMQException where it receives while the socket is used by the other requester.
                 // alternative way to send a multipart message
-
+                socket = SocketPool.getInstance().getOrCreateSocket(this.host, this.port);
                 ZMsg messages = new ZMsg();
-
-                synchronized (DSPManager.getInstance().getDspRequesterLock()) {
+                if(socket != null) {
+                    //synchronized (DSPManager.getInstance().getDspRequesterLock()) {
                     while(messages == null || messages.peek() == null || Strings.isNullOrEmpty(messages.peek().toString())) {
                         socket.send(this.connectorType, ZMQ.SNDMORE);
                         //System.out.println("DSPManager lock: " + DSPManager.getInstance().hashCode());
@@ -56,17 +58,19 @@ public class DSPRequester implements Runnable {
                             //System.out.println(" Setting last id: " + Long.toString(DSPManager.getInstance().getLastReceivedMessageID()));
                         }
                     }
-                }
+                    SocketPool.getInstance().checkInSocket(this.host, this.port);
+                    //}
 
-                if(messages != null && !Strings.isNullOrEmpty(messages.peek().toString())) {
-                    //System.out.println("Message received.");
-                    //this.messageNumber = Long.parseLong(messages.pop().toString());
-                    for(ZFrame frame : messages) {
-                        // block writing to buffer as long the buffer is full
-                        while(this.messageBuffer.isFull()) {}
+                    if(messages != null && !Strings.isNullOrEmpty(messages.peek().toString())) {
+                        //System.out.println("Message received.");
+                        //this.messageNumber = Long.parseLong(messages.pop().toString());
+                        for(ZFrame frame : messages) {
+                            // block writing to buffer as long the buffer is full
+                            while(this.messageBuffer.isFull()) {}
 
-                        //System.out.println(DSPManager.getInstance().getBuffer(this.messageBufferConnectionString).getMessages());
-                        this.messageBuffer.writeBuffer(frame.getData());
+                            //System.out.println(DSPManager.getInstance().getBuffer(this.messageBufferConnectionString).getMessages());
+                            this.messageBuffer.writeBuffer(frame.getData());
+                        }
                     }
                 }
             }

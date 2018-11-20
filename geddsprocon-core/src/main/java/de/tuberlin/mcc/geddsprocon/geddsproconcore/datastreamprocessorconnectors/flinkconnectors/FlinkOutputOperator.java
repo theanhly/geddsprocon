@@ -25,7 +25,8 @@ public class FlinkOutputOperator extends RichSinkFunction<Serializable> implemen
     private volatile boolean init;
 
     public FlinkOutputOperator(DSPConnectorConfig config) {
-        this.messageBufferConnectionString = "ipc:///" + config.getBufferConnectionString();
+        //this.messageBufferConnectionString = "ipc:///" + config.getBufferConnectionString();
+        this.messageBufferConnectionString = config.getHost() + ":" + config.getPort();
         this.config = config;
         this.transform = config.getTransform();
         this.init = false;
@@ -96,6 +97,7 @@ public class FlinkOutputOperator extends RichSinkFunction<Serializable> implemen
 
     @Override
     public List<byte[]> snapshotState(long checkpointId, long timestamp) throws Exception {
+        System.out.println("snapshotState.....");
         ZMsg zmsg = DSPManager.getInstance().getBuffer(this.messageBufferConnectionString).flushBuffer(this, false);
         List<byte[]> list = new LinkedList<>();
         for(ZFrame frame: zmsg )

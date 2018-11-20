@@ -66,8 +66,8 @@ public class SparkInputOperator extends Receiver<Serializable> implements IDSPIn
                         store(message);
                     }
                 } else if (config.getSocketType() == SocketPool.SocketType.REQ || config.getSocketType() == SocketPool.SocketType.DEFAULT) {
-                    if(!DSPManager.getInstance().getBuffer(this.messageBufferConnectionString).isEmpty()) {
-                        DSPManager.getInstance().getBuffer(this.messageBufferConnectionString).flushBuffer(this);
+                    if(!DSPManager.getInstance().getBuffer(this).isEmpty()) {
+                        DSPManager.getInstance().getBuffer(this).flushBuffer(this);
                     }
                 }
             }
@@ -91,7 +91,6 @@ public class SparkInputOperator extends Receiver<Serializable> implements IDSPIn
             if(message instanceof de.tuberlin.mcc.geddsprocon.geddsproconcore.tuple.Tuple && this.transform)
                 message = (Serializable)TupleTransformer.transformFromIntermediateTuple((de.tuberlin.mcc.geddsprocon.geddsproconcore.tuple.Tuple)message);
 
-            System.out.println("storing");
             store(message);
         }
 

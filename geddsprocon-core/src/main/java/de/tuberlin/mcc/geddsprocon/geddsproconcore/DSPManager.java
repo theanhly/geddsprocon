@@ -8,6 +8,7 @@ import de.tuberlin.mcc.geddsprocon.geddsproconcore.tuple.Tuple3;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 
 public class DSPManager {
 
@@ -15,9 +16,10 @@ public class DSPManager {
     private ArrayList<Thread> requesterThreads;
     private String messageBufferConnectionString;
     private HashMap<String, MessageBuffer> bufferProcessMap;
+    private HashMap<String, DSPRouter> dspRouterMap;
     private HashMap<IDSPInputOperator, MessageBuffer> inputOpBufferMap;
     private static final Object dspManagerLock = new Object();
-    private static final Object dspRequesterLock = new Object();
+    private static final Object dspRouterLock = new Object();
     private volatile long lastReceivedMessageID;
 
     private static DSPManager ourInstance = new DSPManager();
@@ -32,6 +34,7 @@ public class DSPManager {
         this.requesterThreads = new ArrayList<>();
         this.bufferProcessMap = new HashMap<>();
         this.inputOpBufferMap = new HashMap<>();
+        this.dspRouterMap = new HashMap<>();
         this.lastReceivedMessageID = -1;
     }
 
@@ -64,10 +67,11 @@ public class DSPManager {
 
     public void initiateInputOperator(DSPConnectorConfig config, IDSPInputOperator inputOp) {
         MessageBuffer messageBuffer = null;
-        String messageBufferConnectionString = "";
+        //String messageBufferConnectionString = "";
         if(config.getSocketType() == SocketPool.SocketType.REQ || config.getSocketType() == SocketPool.SocketType.DEFAULT) {
             messageBuffer = new MessageBuffer();
-            messageBufferConnectionString = messageBuffer.initiateBuffer(config, false);
+            //messageBufferConnectionString = messageBuffer.initiateBuffer(config, false);
+            messageBuffer.initiateBuffer(config, false);
             System.out.println("Init input op: " + Thread.currentThread().getId() + " buffer: " + messageBuffer.hashCode());
         }
         //this.bufferMap.put(messageBufferConnectionString, messageBuffer);
@@ -85,17 +89,32 @@ public class DSPManager {
         // if no sockettype is defined use the default socket type
         SocketPool.getInstance().createSockets(config.getSocketType() == SocketPool.SocketType.DEFAULT ? SocketPool.SocketType.ROUTER : SocketPool.SocketType.PUSH, config);
         // initiate the buffer. make it 20 for now for testing purposes. later get the buffer size depending on the hwm (?)
-        MessageBuffer messageBuffer = new MessageBuffer();
-        String messageBufferConnectionString = messageBuffer.initiateBuffer(config);
-        this.bufferProcessMap.put(messageBufferConnectionString, messageBuffer);
+        String hashSetKey = config.getHost() + ":" + config.getPort();
 
-        // initiate the manager
-        DSPRouter router = new DSPRouter(config.getHost(), config.getPort(), outputOp.getBufferFunction(), messageBufferConnectionString);
-        // add the manager as a listener to the message buffer
-        messageBuffer.addListener(router);
-        // start the manager thread
-        Thread routerThread = new Thread(router);
-        routerThread.start();
+        MessageBuffer messageBuffer = null;
+
+        if(!bufferProcessMap.containsKey(hashSetKey)) {
+            //String messageBufferConnectionString = messageBuffer.initiateBuffer(config);
+            //this.bufferProcessMap.put(messageBufferConnectionString, messageBuffer);
+            messageBuffer = new MessageBuffer();
+            messageBuffer.initiateBuffer(config);
+            this.bufferProcessMap.put(hashSetKey, messageBuffer);
+        } else
+            messageBuffer = this.bufferProcessMap.get(hashSetKey);
+
+        // initiate the router if the router only if a router with the same host:port hasn't been started yet
+        synchronized (this.getDspManagerLock()) {
+            if(!this.dspRouterMap.containsKey(hashSetKey)) {
+                System.out.println("Starting router");
+                DSPRouter router = new DSPRouter(config.getHost(), config.getPort(), outputOp.getBufferFunction(), messageBufferConnectionString);
+                // add the manager as a listener to the message buffer
+                messageBuffer.addListener(router);
+                // start the manager thread
+                Thread routerThread = new Thread(router);
+                routerThread.start();
+                this.dspRouterMap.put(hashSetKey, router);
+            }
+        }
     }
 
     /**
@@ -130,5 +149,5 @@ public class DSPManager {
         return  this.dspManagerLock;
     }
 
-    public Object getDspRequesterLock() { return this.dspRequesterLock; }
+    public Object getDspRouterLock() { return this.dspRouterLock; }
 }

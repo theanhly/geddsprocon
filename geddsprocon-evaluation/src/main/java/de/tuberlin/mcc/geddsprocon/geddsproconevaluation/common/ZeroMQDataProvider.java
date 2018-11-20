@@ -1,6 +1,7 @@
-package de.tuberlin.mcc.geddsprocon.geddsproconevaluation.firstpart.flink;
+package de.tuberlin.mcc.geddsprocon.geddsproconevaluation.common;
 
 import de.tuberlin.mcc.geddsprocon.geddsproconcore.common.SerializationTool;
+import org.apache.flink.api.java.tuple.Tuple2;
 import org.zeromq.ZMQ;
 
 import java.io.BufferedReader;
@@ -39,6 +40,8 @@ public class ZeroMQDataProvider implements Runnable {
             newLine = tsvReader.readLine();
             while(newLine != null && !newLine.isEmpty()) {
                 String[] array = newLine.split("\t");
+                /*for(String word : array[13].split(" "))
+                    sender.send(SerializationTool.serialize(new Tuple2<String, Integer>(word, 1)));*/
                 sender.send(SerializationTool.serialize(array[13]));
                 newLine = tsvReader.readLine();
             }

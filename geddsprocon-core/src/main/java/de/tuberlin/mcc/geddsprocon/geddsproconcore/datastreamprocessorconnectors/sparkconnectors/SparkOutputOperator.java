@@ -40,10 +40,12 @@ public class SparkOutputOperator<T extends JavaRDDLike> implements IDSPOutputOpe
                         byte[] byteMessage = SerializationTool.serialize((Serializable)rdd);
 
                         // block while the buffer is full
-                        while(DSPManager.getInstance().getBuffer(this.messageBufferConnectionString).isFull()) {}
+                        //while(DSPManager.getInstance().getBuffer(this.messageBufferConnectionString).isFull()) {}
+                        while(DSPManager.getInstance().getBuffer(this.config.getHost() + ":" + this.config.getPort()).isFull()) {}
 
-                        DSPManager.getInstance().getBuffer(this.messageBufferConnectionString).writeBuffer(byteMessage);
-                        System.out.println("Written to buffer");
+                        //DSPManager.getInstance().getBuffer(this.messageBufferConnectionString).writeBuffer(byteMessage);
+                        DSPManager.getInstance().getBuffer(this.config.getHost() + ":" + this.config.getPort()).writeBuffer(byteMessage);
+                        //System.out.println("Written to buffer");
                     }
                 }
             }

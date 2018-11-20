@@ -33,7 +33,7 @@ public class MessageBuffer {
     private ZMsg messageBuffer;
     private ZMsg previousMessageBuffer;
     private boolean addSentMessagesFrame;
-    private long sentMessagesID;
+    private volatile long sentMessagesID;
 
     public MessageBuffer() {
         this.listener = new LinkedList<>();

@@ -18,7 +18,7 @@ public class TupleMapper implements FlatMapFunction<Tuple2<String, Integer>, Tup
             writer.append(inputTuple.f0 + ": " + LocalDateTime.now() + "\n");
 
             if(inputTuple.f0.equals("END_DATA"))
-                writer.append("Counter: " + this.counter + "\n" + "==============================\n");
+                writer.append("Counter: " + this.counter + "\n" + "===============END_DATA AT TUPLEMAPPER===============\n");
 
             writer.close();
         } else {

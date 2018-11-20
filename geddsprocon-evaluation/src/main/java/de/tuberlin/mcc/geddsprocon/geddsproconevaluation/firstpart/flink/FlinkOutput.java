@@ -3,6 +3,7 @@ package de.tuberlin.mcc.geddsprocon.geddsproconevaluation.firstpart.flink;
 import de.tuberlin.mcc.geddsprocon.geddsproconcore.DSPConnectorConfig;
 import de.tuberlin.mcc.geddsprocon.geddsproconcore.DSPConnectorFactory;
 import de.tuberlin.mcc.geddsprocon.geddsproconcore.datastreamprocessorconnectors.SocketPool;
+import de.tuberlin.mcc.geddsprocon.geddsproconevaluation.common.ZeroMQDataProvider;
 import org.apache.flink.api.common.typeinfo.TypeInformation;
 import org.apache.flink.streaming.api.datastream.DataStream;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
@@ -31,8 +32,8 @@ public class FlinkOutput {
                     .flatMap(new StringSplitter())
                     .keyBy("f0")
                     .timeWindow(Time.seconds(5))
-                    .sum("f1")
-                    .flatMap(new TupleMapper());
+                    .sum("f1");
+                    //.flatMap(new TupleMapper());
 
             dataStream.addSink((SinkFunction)DSPConnectorFactory.getInstance().createOutputOperator(new DSPConnectorConfig.Builder(host, outPutPort)
                     .withDSP("flink")
