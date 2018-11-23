@@ -34,14 +34,16 @@ public class MessageBuffer {
     private ZMsg previousMessageBuffer;
     private boolean addSentMessagesFrame;
     private volatile long sentMessagesID;
+    private boolean isSeparateBufferProcess;
 
     public MessageBuffer() {
         this.listener = new LinkedList<>();
 
         this.init = false;
         this.bufferSocket = this.context.socket(ZMQ.REQ);
-        this.bufferSocket.setReceiveTimeOut(5000);
-        messages = 0;
+        this.bufferSocket.setReceiveTimeOut(10000);
+        this.bufferSocket.setReqRelaxed(true);
+        this.messages = 0;
     }
 
     public void addListener(IMessageBufferListener listener) {
@@ -76,52 +78,58 @@ public class MessageBuffer {
     public String initiateBuffer(DSPConnectorConfig config, boolean addSentMessagesFrame) {
         if(config != null) {
             this.bufferSize = config.getHwm();
-
         }
 
         this.addSentMessagesFrame = addSentMessagesFrame;
+        this.isSeparateBufferProcess = !Strings.isNullOrEmpty(config.getBufferConnectionString());
+        String connectionString;
 
-        String connectionString = "ipc:///" + config.getBufferConnectionString();
+        if(this.isSeparateBufferProcess) {
+            synchronized (this.bufferLock) {
+                for (int i = 0; true; i++) {
+                    connectionString = Strings.isNullOrEmpty(config.getBufferConnectionString()) ? "ipc:///message-buffer-process-" + i : "ipc:///" + config.getBufferConnectionString();
+                    this.bufferSocket.connect(connectionString);
+                    this.bufferSocket.send(this.INIT_MESSAGE);
+                    String reply = this.bufferSocket.recvStr();
+                    if (Strings.isNullOrEmpty(reply)) {
+                        try {
+                            JavaProcessBuilder.exec(MessageBufferProcess.class, connectionString, addSentMessagesFrame);
+                            reply = this.bufferSocket.recvStr();
+                            System.out.println(reply);
+                            assert (reply.equals("OK"));
+                            break;
+                        } catch (Exception ex) {
+                            System.err.println("Starting message buffer process failed.");
+                            System.err.println(ex.toString());
+                        }
+                    } else {
+                        if (Strings.isNullOrEmpty(config.getBufferConnectionString()))
+                            this.bufferSocket.disconnect(connectionString);
+                        else {
+                            assert (reply.equals("OK"));
+                            this.messages = 0;
+                            this.bufferSocket.send(this.MESSAGECOUNT_MESSAGE);
+                            this.messages = Integer.parseInt(this.bufferSocket.recvStr());
 
-        this.sentMessagesID = 1;
-        this.messageBuffer = new ZMsg();
-        if(this.addSentMessagesFrame)
-            this.messageBuffer.add(Long.toString(sentMessagesID));
-
-        /*for(int i = 0; true; i++) {
-            connectionString = Strings.isNullOrEmpty(config.getBufferConnectionString()) ? "ipc:///message-buffer-process-" + i : "ipc:///" + config.getBufferConnectionString();
-            this.bufferSocket.connect(connectionString);
-            this.bufferSocket.send(this.INIT_MESSAGE);
-            String reply = this.bufferSocket.recvStr();
-            if(Strings.isNullOrEmpty(reply)) {
-                try {
-                    JavaProcessBuilder.exec(MessageBufferProcess.class, connectionString, addSentMessagesFrame);
-                    reply = this.bufferSocket.recvStr();
-                    System.out.println(reply);
-                    assert(reply.equals("OK"));
-                    break;
-                } catch(Exception ex) {
-                    System.err.println("Starting message buffer process failed.");
-                    System.err.println(ex.toString());
+                            System.out.println("Old MessageBuffer found. Message count: " + this.messages);
+                            break;
+                        }
+                    }
                 }
-            } else {
-                if(Strings.isNullOrEmpty(config.getBufferConnectionString()))
-                    this.bufferSocket.disconnect(connectionString);
-                else {
-                    assert(reply.equals("OK"));
-                    this.messages = 0;
-                    this.bufferSocket.send(this.MESSAGECOUNT_MESSAGE);
-                    this.messages = Integer.parseInt(this.bufferSocket.recvStr());
 
-                    System.out.println("Old MessageBuffer found. Message count: " + this.messages);
-                    break;
-                }
+                System.out.println("Init buffer with connection string: " + connectionString + " @Thread-ID: " + Thread.currentThread().getId());
+                return connectionString;
             }
-        }*/
+        } else {
+            connectionString = config.getHost() + ":" + config.getPort();
+            this.sentMessagesID = 1;
+            this.messageBuffer = new ZMsg();
+            if(this.addSentMessagesFrame)
+                this.messageBuffer.add(Long.toString(sentMessagesID));
 
-
-        System.out.println("Init buffer with connection string: " + connectionString + " @Thread-ID: " + Thread.currentThread().getId());
-        return connectionString;
+            System.out.println("Init buffer with router address: " + connectionString + " @Thread-ID: " + Thread.currentThread().getId());
+            return connectionString;
+        }
     }
 
     /**
@@ -131,38 +139,27 @@ public class MessageBuffer {
     public void writeBuffer(byte[] bytes) {
         // buffer gets overwritten if buffer isn't flushed in time
         synchronized (this.bufferLock) {
-            /*//this.buffer[this.messages%this.bufferSize] = bytes;
-            //System.out.println("===== Message buffer writing start.");
-            ZMsg writeMessage = new ZMsg();
-            writeMessage.add(this.WRITE_MESSAGE);
-            writeMessage.add(bytes);
-            writeMessage.send(this.bufferSocket);
 
-            // do not receive the response in assert since it seems to be non blocking -> results in exception if run in a cluster
-            String response = this.bufferSocket.recvStr();
-            assert(response.equals("WRITE_SUCCESS"));*/
-            //System.out.println("===== Message buffer writing start.");
-            this.messageBuffer.add(bytes);
+            if(this.isSeparateBufferProcess) {
+                //this.buffer[this.messages%this.bufferSize] = bytes;
+                //System.out.println("===== Message buffer writing start.");
+                ZMsg writeMessage = new ZMsg();
+                writeMessage.add(this.WRITE_MESSAGE);
+                writeMessage.add(bytes);
+                writeMessage.send(this.bufferSocket);
 
-            this.messages++;
-            //System.out.println("===== Message buffer writing end.");
+                // do not receive the response in assert since it seems to be non blocking -> results in exception if run in a cluster
+                String response = this.bufferSocket.recvStr();
+                assert(response.equals("WRITE_SUCCESS"));
 
-            /* OLD
-            //this.buffer[this.messages%this.bufferSize] = bytes;
-            //System.out.println("===== Message buffer writing start.");
-            ZMsg writeMessage = new ZMsg();
-            writeMessage.add(this.WRITE_MESSAGE);
-            writeMessage.add(bytes);
-            writeMessage.send(this.bufferSocket);
-
-            // do not receive the response in assert since it seems to be non blocking -> results in exception if run in a cluster
-            String response = this.bufferSocket.recvStr();
-            assert(response.equals("WRITE_SUCCESS"));
-
-            this.messages++;
-            //System.out.println("===== Message buffer writing end.");
-             */
+                this.messages++;
+                //System.out.println("===== Message buffer writing end.");
+            } else {
+                this.messageBuffer.add(bytes);
+                this.messages++;
+            }
         }
+
         if(isFull())
         {
             System.out.println("Buffer full");
@@ -205,24 +202,39 @@ public class MessageBuffer {
      */
     public ZMsg flushBuffer(IMessageBufferFunction bufferFunction, boolean clearBuffer, boolean previousBuffer) {
         synchronized(this.bufferLock) {
-            // callback call flushing of buffer
-            ZMsg messages;
-            if(previousBuffer) {
-                //this.bufferSocket.send(this.PEEKPREVBUFFER_MESSAGE);
-                messages = this.previousMessageBuffer.duplicate();
+
+            if(this.isSeparateBufferProcess) {
+                // callback call flushing of buffer
+                if(previousBuffer)
+                    this.bufferSocket.send(this.PEEKPREVBUFFER_MESSAGE);
+                else
+                    this.bufferSocket.send(this.PEEKBUFFER_MESSAGE);
+
+                ZMsg msg = ZMsg.recvMsg(this.bufferSocket);
+                //System.out.println(msg.toString());
+                ZMsg messages = bufferFunction.flush(msg);
+
+                if(clearBuffer)
+                    clearBuffer();
+
+                return messages;
+            } else {
+                // callback call flushing of buffer
+                ZMsg messages;
+                if(previousBuffer) {
+                    messages = this.previousMessageBuffer.duplicate();
+                }
+                else {
+                    messages = this.messageBuffer.duplicate();
+                }
+
+                messages = bufferFunction.flush(messages);
+
+                if(clearBuffer)
+                    clearBuffer();
+
+                return messages;
             }
-            else {
-                // this.bufferSocket.send(this.PEEKBUFFER_MESSAGE);
-                messages = this.messageBuffer.duplicate();
-            }
-
-            //ZMsg messages = bufferFunction.flush(ZMsg.recvMsg(this.bufferSocket));
-            messages = bufferFunction.flush(messages);
-
-            if(clearBuffer)
-                clearBuffer();
-
-            return messages;
         }
     }
 
@@ -231,26 +243,24 @@ public class MessageBuffer {
      */
     public void clearBuffer() {
         synchronized(this.bufferLock) {
-            /*this.bufferSocket.send(this.CLEARBUFFER_MESSAGE);
+            if(this.isSeparateBufferProcess) {
+                this.bufferSocket.send(this.CLEARBUFFER_MESSAGE);
 
-            //
-            String response = this.bufferSocket.recvStr();
-            assert(response.equals("CLEAR_SUCCESS"));*/
-            if(this.previousMessageBuffer != null)
-                this.previousMessageBuffer.destroy();
+                //
+                String response = this.bufferSocket.recvStr();
+                assert(response.equals("CLEAR_SUCCESS"));
+                this.messages = 0;
+            } else {
+                if(this.previousMessageBuffer != null)
+                    this.previousMessageBuffer.destroy();
 
-            this.previousMessageBuffer = this.messageBuffer.duplicate();
-            messageBuffer.destroy();
-            if(this.addSentMessagesFrame)
-                messageBuffer.add(Long.toString(++this.sentMessagesID));
+                this.previousMessageBuffer = this.messageBuffer.duplicate();
+                messageBuffer.destroy();
+                if(this.addSentMessagesFrame)
+                    messageBuffer.add(Long.toString(++this.sentMessagesID));
 
-            this.messages = 0;
-
-            /* OLD
-            String response = this.bufferSocket.recvStr();
-            assert(response.equals("CLEAR_SUCCESS"));
-            this.messages = 0;
-             */
+                this.messages = 0;
+            }
         }
     }
 
@@ -265,11 +275,12 @@ public class MessageBuffer {
 
     public long getSentMessages() {
         synchronized (this.bufferLock) {
-            /* OLD
-            this.bufferSocket.send(this.SENTMESSAGES_MESSAGE);
-            return Long.parseLong(this.bufferSocket.recvStr());
-             */
-            return this.sentMessagesID;
+            if(this.isSeparateBufferProcess) {
+                this.bufferSocket.send(this.SENTMESSAGES_MESSAGE);
+                return Long.parseLong(this.bufferSocket.recvStr());
+            } else {
+                return this.sentMessagesID;
+            }
         }
     }
 

@@ -1,5 +1,6 @@
 package de.tuberlin.mcc.geddsprocon.geddsproconcore.datastreamprocessorconnectors.flinkconnectors;
 
+import com.google.common.base.Strings;
 import de.tuberlin.mcc.geddsprocon.geddsproconcore.DSPConnectorConfig;
 import de.tuberlin.mcc.geddsprocon.geddsproconcore.DSPManager;
 import de.tuberlin.mcc.geddsprocon.geddsproconcore.common.SerializationTool;
@@ -28,7 +29,7 @@ public class FlinkInputOperator extends RichParallelSourceFunction<Serializable>
 
     public FlinkInputOperator(DSPConnectorConfig config) {
         this.config = config;
-        this.messageBufferConnectionString = "ipc:///" + config.getBufferConnectionString();
+        this.messageBufferConnectionString = !Strings.isNullOrEmpty(config.getBufferConnectionString()) ? "ipc:///" + config.getBufferConnectionString() : "";
         this.host = this.config.getHost();
         this.port = this.config.getPort();
         this.transform = this.config.getTransform();
@@ -73,9 +74,9 @@ public class FlinkInputOperator extends RichParallelSourceFunction<Serializable>
                 }
             } else if(config.getSocketType() == SocketPool.SocketType.REQ || config.getSocketType() == SocketPool.SocketType.DEFAULT) {
 
-                if(!DSPManager.getInstance().getBuffer(this).isEmpty()) {
+                if(!DSPManager.getInstance().getBuffer(this.messageBufferConnectionString, this).isEmpty()) {
                     this.ctx = ctx;
-                    DSPManager.getInstance().getBuffer(this).flushBuffer(this);
+                    DSPManager.getInstance().getBuffer(this.messageBufferConnectionString, this).flushBuffer(this);
                 }
             }
         }
@@ -99,14 +100,16 @@ public class FlinkInputOperator extends RichParallelSourceFunction<Serializable>
 
     @Override
     public synchronized ZMsg flush(ZMsg messages) {
-        for(ZFrame frame : messages) {
+        if(messages != null) {
+            for(ZFrame frame : messages) {
 
-            Serializable message = (Serializable)SerializationTool.deserialize(frame.getData());
+                Serializable message = (Serializable)SerializationTool.deserialize(frame.getData());
 
-            if(message instanceof de.tuberlin.mcc.geddsprocon.geddsproconcore.tuple.Tuple && this.transform)
-                message = TupleTransformer.transformFromIntermediateTuple((de.tuberlin.mcc.geddsprocon.geddsproconcore.tuple.Tuple)message);
+                if(message instanceof de.tuberlin.mcc.geddsprocon.geddsproconcore.tuple.Tuple && this.transform)
+                    message = TupleTransformer.transformFromIntermediateTuple((de.tuberlin.mcc.geddsprocon.geddsproconcore.tuple.Tuple)message);
 
-            this.ctx.collect(message);
+                this.ctx.collect(message);
+            }
         }
 
         return null;

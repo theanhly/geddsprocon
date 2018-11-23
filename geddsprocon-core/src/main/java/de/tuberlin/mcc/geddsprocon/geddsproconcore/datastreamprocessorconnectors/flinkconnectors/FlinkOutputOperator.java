@@ -1,5 +1,6 @@
 package de.tuberlin.mcc.geddsprocon.geddsproconcore.datastreamprocessorconnectors.flinkconnectors;
 
+import com.google.common.base.Strings;
 import de.tuberlin.mcc.geddsprocon.geddsproconcore.DSPConnectorConfig;
 import de.tuberlin.mcc.geddsprocon.geddsproconcore.DSPManager;
 import de.tuberlin.mcc.geddsprocon.geddsproconcore.common.SerializationTool;
@@ -26,7 +27,8 @@ public class FlinkOutputOperator extends RichSinkFunction<Serializable> implemen
 
     public FlinkOutputOperator(DSPConnectorConfig config) {
         //this.messageBufferConnectionString = "ipc:///" + config.getBufferConnectionString();
-        this.messageBufferConnectionString = config.getHost() + ":" + config.getPort();
+        this.messageBufferConnectionString = Strings.isNullOrEmpty(config.getBufferConnectionString()) ? config.getHost() + ":" + config.getPort() : "ipc:///" + config.getBufferConnectionString();
+        System.out.println("Buffer string flink: " + messageBufferConnectionString);
         this.config = config;
         this.transform = config.getTransform();
         this.init = false;
@@ -40,7 +42,7 @@ public class FlinkOutputOperator extends RichSinkFunction<Serializable> implemen
     public void open(Configuration parameters) {
         synchronized (DSPManager.getInstance().getDspManagerLock()) {
             System.out.println("Output Op @Thread-ID: " + Thread.currentThread().getId() + " Init-Before: " + this.init);
-            DSPManager.getInstance().initiateOutputOperator(config, this);
+            DSPManager.getInstance().initiateOutputOperator(this.config, this);
             this.init = true;
             System.out.println("Output Op @Thread-ID: " + Thread.currentThread().getId() + " Init-After: " + this.init);
         }

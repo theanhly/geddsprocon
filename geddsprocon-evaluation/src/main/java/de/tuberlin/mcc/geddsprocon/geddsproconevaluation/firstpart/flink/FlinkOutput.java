@@ -22,7 +22,7 @@ public class FlinkOutput {
             Thread zeroMQDataProviderThread = new Thread(new ZeroMQDataProvider(host, inputPort, file));
             zeroMQDataProviderThread.start();
 
-            StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment().setParallelism(1);
+            StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment().setParallelism(4);
 
             DataStream<String> dataStream = env
                     .addSource((SourceFunction)DSPConnectorFactory.getInstance().createInputOperator(new DSPConnectorConfig.Builder(host, inputPort)
@@ -38,7 +38,7 @@ public class FlinkOutput {
             dataStream.addSink((SinkFunction)DSPConnectorFactory.getInstance().createOutputOperator(new DSPConnectorConfig.Builder(host, outPutPort)
                     .withDSP("flink")
                     .withHWM(250000)
-                    .withBufferConnectorString("sendbuffer")
+                    //.withBufferConnectorString("sendbuffer")
                     .withTimeout(5000)
                     .build()));
 

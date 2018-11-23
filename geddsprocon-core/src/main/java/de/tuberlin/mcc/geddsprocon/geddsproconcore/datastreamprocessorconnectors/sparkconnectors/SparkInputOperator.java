@@ -1,5 +1,6 @@
 package de.tuberlin.mcc.geddsprocon.geddsproconcore.datastreamprocessorconnectors.sparkconnectors;
 
+import com.google.common.base.Strings;
 import de.tuberlin.mcc.geddsprocon.geddsproconcore.DSPConnectorConfig;
 import de.tuberlin.mcc.geddsprocon.geddsproconcore.DSPManager;
 import de.tuberlin.mcc.geddsprocon.geddsproconcore.common.SerializationTool;
@@ -24,7 +25,7 @@ public class SparkInputOperator extends Receiver<Serializable> implements IDSPIn
 
     public SparkInputOperator(DSPConnectorConfig config) {
         super(StorageLevel.MEMORY_AND_DISK_2());
-        this.messageBufferConnectionString = "ipc:///" + config.getBufferConnectionString();
+        this.messageBufferConnectionString = !Strings.isNullOrEmpty(config.getBufferConnectionString()) ? "ipc:///" + config.getBufferConnectionString() : "";
         this.config = config;
         this.host = this.config.getHost();
         this.port = this.config.getPort();
@@ -66,8 +67,8 @@ public class SparkInputOperator extends Receiver<Serializable> implements IDSPIn
                         store(message);
                     }
                 } else if (config.getSocketType() == SocketPool.SocketType.REQ || config.getSocketType() == SocketPool.SocketType.DEFAULT) {
-                    if(!DSPManager.getInstance().getBuffer(this).isEmpty()) {
-                        DSPManager.getInstance().getBuffer(this).flushBuffer(this);
+                    if(!DSPManager.getInstance().getBuffer(this.messageBufferConnectionString, this).isEmpty()) {
+                        DSPManager.getInstance().getBuffer(this.messageBufferConnectionString, this).flushBuffer(this);
                     }
                 }
             }
@@ -84,14 +85,16 @@ public class SparkInputOperator extends Receiver<Serializable> implements IDSPIn
 
     @Override
     public synchronized ZMsg flush(ZMsg messages) {
-        for(ZFrame frame : messages) {
+        if(messages != null) {
+            for(ZFrame frame : messages) {
 
-            Serializable message = (Serializable)SerializationTool.deserialize(frame.getData());
+                Serializable message = (Serializable)SerializationTool.deserialize(frame.getData());
 
-            if(message instanceof de.tuberlin.mcc.geddsprocon.geddsproconcore.tuple.Tuple && this.transform)
-                message = (Serializable)TupleTransformer.transformFromIntermediateTuple((de.tuberlin.mcc.geddsprocon.geddsproconcore.tuple.Tuple)message);
+                if(message instanceof de.tuberlin.mcc.geddsprocon.geddsproconcore.tuple.Tuple && this.transform)
+                    message = (Serializable)TupleTransformer.transformFromIntermediateTuple((de.tuberlin.mcc.geddsprocon.geddsproconcore.tuple.Tuple)message);
 
-            store(message);
+                store(message);
+            }
         }
 
         return null;

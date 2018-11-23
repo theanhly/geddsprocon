@@ -1,5 +1,6 @@
 package de.tuberlin.mcc.geddsprocon.geddsproconcore;
 
+import com.google.common.base.Strings;
 import de.tuberlin.mcc.geddsprocon.geddsproconcore.datastreamprocessorconnectors.IDSPInputOperator;
 import de.tuberlin.mcc.geddsprocon.geddsproconcore.datastreamprocessorconnectors.IDSPOutputOperator;
 import de.tuberlin.mcc.geddsprocon.geddsproconcore.datastreamprocessorconnectors.SocketPool;
@@ -67,16 +68,23 @@ public class DSPManager {
 
     public void initiateInputOperator(DSPConnectorConfig config, IDSPInputOperator inputOp) {
         MessageBuffer messageBuffer = null;
-        //String messageBufferConnectionString = "";
+        String messageBufferConnectionString = "";
         if(config.getSocketType() == SocketPool.SocketType.REQ || config.getSocketType() == SocketPool.SocketType.DEFAULT) {
-            messageBuffer = new MessageBuffer();
-            //messageBufferConnectionString = messageBuffer.initiateBuffer(config, false);
-            messageBuffer.initiateBuffer(config, false);
-            System.out.println("Init input op: " + Thread.currentThread().getId() + " buffer: " + messageBuffer.hashCode());
-        }
-        //this.bufferMap.put(messageBufferConnectionString, messageBuffer);
+            if(Strings.isNullOrEmpty(config.getBufferConnectionString())) {
+                messageBuffer = new MessageBuffer();
+                messageBufferConnectionString = messageBuffer.initiateBuffer(config, false);
+                System.out.println("Init input op: " + Thread.currentThread().getId() + " buffer: " + messageBuffer.hashCode());
+                this.inputOpBufferMap.put(inputOp, messageBuffer);
+            } else {
+                if(this.bufferProcessMap.containsKey("ipc:///" + config.getBufferConnectionString()))
+                    return;
 
-        this.inputOpBufferMap.put(inputOp, messageBuffer);
+                messageBuffer = new MessageBuffer();
+                messageBufferConnectionString = messageBuffer.initiateBuffer(config, false);
+                this.bufferProcessMap.put(messageBufferConnectionString, messageBuffer);
+            }
+        }
+
         if(config.getSocketType() == SocketPool.SocketType.PULL) {
             SocketPool.getInstance().createSockets(SocketPool.SocketType.PULL, config);
         } else if(config.getSocketType() == SocketPool.SocketType.REQ || config.getSocketType() == SocketPool.SocketType.DEFAULT) {
@@ -89,30 +97,30 @@ public class DSPManager {
         // if no sockettype is defined use the default socket type
         SocketPool.getInstance().createSockets(config.getSocketType() == SocketPool.SocketType.DEFAULT ? SocketPool.SocketType.ROUTER : SocketPool.SocketType.PUSH, config);
         // initiate the buffer. make it 20 for now for testing purposes. later get the buffer size depending on the hwm (?)
-        String hashSetKey = config.getHost() + ":" + config.getPort();
-
+        String messageBufferString = "";
+        String routerAddress = config.getHost() + ":" + config.getPort();
         MessageBuffer messageBuffer = null;
 
-        if(!bufferProcessMap.containsKey(hashSetKey)) {
+        if(!this.bufferProcessMap.containsKey(messageBufferString)) {
             //String messageBufferConnectionString = messageBuffer.initiateBuffer(config);
             //this.bufferProcessMap.put(messageBufferConnectionString, messageBuffer);
             messageBuffer = new MessageBuffer();
-            messageBuffer.initiateBuffer(config);
-            this.bufferProcessMap.put(hashSetKey, messageBuffer);
+            messageBufferString = messageBuffer.initiateBuffer(config);
+            this.bufferProcessMap.put(messageBufferString, messageBuffer);
         } else
-            messageBuffer = this.bufferProcessMap.get(hashSetKey);
+            messageBuffer = this.bufferProcessMap.get(messageBufferString);
 
         // initiate the router if the router only if a router with the same host:port hasn't been started yet
         synchronized (this.getDspManagerLock()) {
-            if(!this.dspRouterMap.containsKey(hashSetKey)) {
+            if(!this.dspRouterMap.containsKey(routerAddress)) {
                 System.out.println("Starting router");
-                DSPRouter router = new DSPRouter(config.getHost(), config.getPort(), outputOp.getBufferFunction(), messageBufferConnectionString);
+                DSPRouter router = new DSPRouter(config.getHost(), config.getPort(), outputOp.getBufferFunction(), messageBufferString);
                 // add the manager as a listener to the message buffer
                 messageBuffer.addListener(router);
                 // start the manager thread
                 Thread routerThread = new Thread(router);
                 routerThread.start();
-                this.dspRouterMap.put(hashSetKey, router);
+                this.dspRouterMap.put(routerAddress, router);
             }
         }
     }
@@ -130,9 +138,14 @@ public class DSPManager {
         return null;
     }
 
-    public MessageBuffer getBuffer(IDSPInputOperator inputOp) {
-        if(this.inputOpBufferMap.containsKey(inputOp))
-            return this.inputOpBufferMap.get(inputOp);
+    public MessageBuffer getBuffer(String messageBufferConnectionString, IDSPInputOperator inputOp) {
+        if(Strings.isNullOrEmpty(messageBufferConnectionString))  {
+            if(this.inputOpBufferMap.containsKey(inputOp))
+                return this.inputOpBufferMap.get(inputOp);
+        } else {
+            if(this.bufferProcessMap.containsKey(messageBufferConnectionString))
+                return this.bufferProcessMap.get(messageBufferConnectionString);
+        }
 
         return null;
     }

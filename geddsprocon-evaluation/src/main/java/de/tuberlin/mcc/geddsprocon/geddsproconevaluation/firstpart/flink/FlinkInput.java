@@ -26,7 +26,7 @@ public class FlinkInput {
                             .withDSP("flink")
                             .withHWM(250000)
                             .withTimeout(15000)
-                            .withBufferConnectorString("recvbuffer")
+                            //.withBufferConnectorString("recvbuffer")
                             .withRequestAddress(host, inputPort, DSPConnectorFactory.ConnectorType.PRIMARY)
                             .build()), TypeInfoParser.parse("Tuple2<String,Integer>"))
                     .flatMap(new TupleMapper())

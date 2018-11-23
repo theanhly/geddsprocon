@@ -29,9 +29,9 @@ public class DSPRouter implements Runnable, IMessageBufferListener {
     public DSPRouter(String host, int port, IMessageBufferFunction bufferFunction, String messageBufferConnectionString) {
         this.host = host;
         this.port = port;
-        this.routerAdress = host + ":" + port;
-        this.bufferFunction = bufferFunction;
         this.messageBufferConnectionString = messageBufferConnectionString;
+        this.routerAdress = Strings.isNullOrEmpty(messageBufferConnectionString) ? host + ":" + port : messageBufferConnectionString;
+        this.bufferFunction = bufferFunction;
         this.endpointQueue = new LinkedList<>();
         this.endpointSet = new HashSet<>();
         this.socket = SocketPool.getInstance().getOrCreateSocket(this.host, this.port);
