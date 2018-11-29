@@ -7,6 +7,7 @@ import de.tuberlin.mcc.geddsprocon.geddsproconcore.common.SerializationTool;
 import de.tuberlin.mcc.geddsprocon.geddsproconcore.datastreamprocessorconnectors.IDSPOutputOperator;
 import de.tuberlin.mcc.geddsprocon.geddsproconcore.datastreamprocessorconnectors.SocketPool;
 import de.tuberlin.mcc.geddsprocon.geddsproconcore.messagebuffer.IMessageBufferFunction;
+import de.tuberlin.mcc.geddsprocon.geddsproconcore.messagebuffer.IMessageBufferListener;
 import org.apache.flink.api.java.tuple.Tuple;
 import org.apache.flink.configuration.Configuration;
 import org.apache.flink.streaming.api.checkpoint.ListCheckpointed;
@@ -18,12 +19,15 @@ import java.io.Serializable;
 import java.util.LinkedList;
 import java.util.List;
 
-public class FlinkOutputOperator extends RichSinkFunction<Serializable> implements IDSPOutputOperator, IMessageBufferFunction, ListCheckpointed<byte[]> {
+public class FlinkOutputOperator extends RichSinkFunction<Serializable> implements IDSPOutputOperator, IMessageBufferFunction, IMessageBufferListener, ListCheckpointed<byte[]> {
     private boolean transform;
     private volatile boolean isRunning = true;
     private final DSPConnectorConfig config;
     private String messageBufferConnectionString;
     private volatile boolean init;
+    private boolean isMessageBufferProcess;
+    private LinkedList outputBuffer;
+    private LinkedList previousOutputBuffer;
 
     public FlinkOutputOperator(DSPConnectorConfig config) {
         //this.messageBufferConnectionString = "ipc:///" + config.getBufferConnectionString();
@@ -32,6 +36,8 @@ public class FlinkOutputOperator extends RichSinkFunction<Serializable> implemen
         this.config = config;
         this.transform = config.getTransform();
         this.init = false;
+        this.outputBuffer = new LinkedList();
+        this.previousOutputBuffer = new LinkedList();
     }
 
     /**
@@ -41,10 +47,11 @@ public class FlinkOutputOperator extends RichSinkFunction<Serializable> implemen
     @Override
     public void open(Configuration parameters) {
         synchronized (DSPManager.getInstance().getDspManagerLock()) {
-            System.out.println("Output Op @Thread-ID: " + Thread.currentThread().getId() + " Init-Before: " + this.init);
+            //System.out.println("Output Op @Thread-ID: " + Thread.currentThread().getId() + " Init-Before: " + this.init);
             DSPManager.getInstance().initiateOutputOperator(this.config, this);
             this.init = true;
             System.out.println("Output Op @Thread-ID: " + Thread.currentThread().getId() + " Init-After: " + this.init);
+            this.isMessageBufferProcess = DSPManager.getInstance().getBuffer(this.messageBufferConnectionString).isSeparateBufferProcess();
         }
     }
 
@@ -75,6 +82,13 @@ public class FlinkOutputOperator extends RichSinkFunction<Serializable> implemen
             while(DSPManager.getInstance().getBuffer(this.messageBufferConnectionString).isFull()) {}
 
             DSPManager.getInstance().getBuffer(this.messageBufferConnectionString).writeBuffer(byteMessage);
+
+            if(!this.isMessageBufferProcess) {
+                synchronized(this) {
+                    //this.outputBuffer.add(byteMessage);
+                }
+            }
+
         }
     }
 
@@ -115,6 +129,22 @@ public class FlinkOutputOperator extends RichSinkFunction<Serializable> implemen
             while(DSPManager.getInstance().getBuffer(this.messageBufferConnectionString).isFull()) {}
 
             DSPManager.getInstance().getBuffer(this.messageBufferConnectionString).writeBuffer(bytes);
+        }
+    }
+
+    @Override
+    public void bufferIsFullEvent() {
+        // Do nothing if the buffer is full.
+    }
+
+    /**
+     * If the buffer is cleared, then backup the buffer and start a new buffer. Delete the
+     */
+    @Override
+    public void bufferClearedEvent() {
+        synchronized (this) {
+            //this.previousOutputBuffer = this.outputBuffer;
+            //this.outputBuffer = new LinkedList();
         }
     }
 }

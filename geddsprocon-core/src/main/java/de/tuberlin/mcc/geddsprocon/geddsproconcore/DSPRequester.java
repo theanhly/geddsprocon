@@ -55,7 +55,7 @@ public class DSPRequester implements Runnable {
 
                         if(messages != null && !Strings.isNullOrEmpty(messages.peek().toString())) {
                             DSPManager.getInstance().setLastReceivedMessageID(Long.parseLong(messages.pop().toString()));
-                            //System.out.println(" Setting last id: " + Long.toString(DSPManager.getInstance().getLastReceivedMessageID()));
+                            //System.out.println("Message count received: " + Long.toString(messages.toArray().length));
                         }
                     }
                     SocketPool.getInstance().checkInSocket(this.host, this.port);

@@ -262,6 +262,9 @@ public class MessageBuffer {
                 this.messages = 0;
             }
         }
+
+        for(IMessageBufferListener listener : this.listener)
+            listener.bufferClearedEvent();
     }
 
     /**
@@ -290,5 +293,9 @@ public class MessageBuffer {
      */
     public Object getBufferLock() {
         return this.bufferLock;
+    }
+
+    public boolean isSeparateBufferProcess() {
+        return this.isSeparateBufferProcess;
     }
 }

@@ -16,7 +16,12 @@ import scala.Tuple2;
 public class SparkInput {
 
     public static void main(String[] args) throws InterruptedException {
-        SparkConf sparkConf = new SparkConf().setAppName("JavaCustomReceiver").setMaster("local[2]").set("spark.executor.memory","1g").set("spark.serializer", KryoSerializer.class.getName());
+        SparkConf sparkConf = new SparkConf()
+                .setAppName("JavaCustomReceiver")
+                .setMaster("local[2]")
+                .set("spark.default.parallelism", "1")
+                .set("spark.executor.memory","4g")
+                .set("spark.executor.instances", "1");
         JavaStreamingContext ssc = new JavaStreamingContext(sparkConf, new Duration(20000));
 
         // Create an input stream with the custom receiver on target ip:port and count the

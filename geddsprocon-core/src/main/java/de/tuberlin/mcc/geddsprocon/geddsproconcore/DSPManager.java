@@ -4,6 +4,7 @@ import com.google.common.base.Strings;
 import de.tuberlin.mcc.geddsprocon.geddsproconcore.datastreamprocessorconnectors.IDSPInputOperator;
 import de.tuberlin.mcc.geddsprocon.geddsproconcore.datastreamprocessorconnectors.IDSPOutputOperator;
 import de.tuberlin.mcc.geddsprocon.geddsproconcore.datastreamprocessorconnectors.SocketPool;
+import de.tuberlin.mcc.geddsprocon.geddsproconcore.messagebuffer.IMessageBufferListener;
 import de.tuberlin.mcc.geddsprocon.geddsproconcore.messagebuffer.MessageBuffer;
 import de.tuberlin.mcc.geddsprocon.geddsproconcore.tuple.Tuple3;
 
@@ -96,7 +97,6 @@ public class DSPManager {
     public void initiateOutputOperator(DSPConnectorConfig config,  IDSPOutputOperator outputOp) {
         // if no sockettype is defined use the default socket type
         SocketPool.getInstance().createSockets(config.getSocketType() == SocketPool.SocketType.DEFAULT ? SocketPool.SocketType.ROUTER : SocketPool.SocketType.PUSH, config);
-        // initiate the buffer. make it 20 for now for testing purposes. later get the buffer size depending on the hwm (?)
         String messageBufferString = "";
         String routerAddress = config.getHost() + ":" + config.getPort();
         MessageBuffer messageBuffer = null;
@@ -117,6 +117,9 @@ public class DSPManager {
                 DSPRouter router = new DSPRouter(config.getHost(), config.getPort(), outputOp.getBufferFunction(), messageBufferString);
                 // add the manager as a listener to the message buffer
                 messageBuffer.addListener(router);
+                if(outputOp instanceof IMessageBufferListener)
+                    messageBuffer.addListener((IMessageBufferListener)outputOp);
+
                 // start the manager thread
                 Thread routerThread = new Thread(router);
                 routerThread.start();

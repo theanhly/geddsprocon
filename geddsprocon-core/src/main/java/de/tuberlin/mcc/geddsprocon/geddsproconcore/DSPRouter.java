@@ -165,4 +165,9 @@ public class DSPRouter implements Runnable, IMessageBufferListener {
         if(DSPManager.getInstance().getBuffer(this.routerAdress).isFull())
             reply();
     }
+
+    @Override
+    public void bufferClearedEvent() {
+        // Nothing to do if the buffer has been cleared
+    }
 }
