@@ -19,7 +19,7 @@ public class StringSplitter implements FlatMapFunction<String, String> {
 
         this.lines++;
         if(stringArr.length == 1 && (stringArr[0].equals("START_DATA") || stringArr[0].equals("END_DATA"))) {
-            BufferedWriter writer = new BufferedWriter(new FileWriter("/home/theanhly/Schreibtisch/test.log", true));
+            BufferedWriter writer = new BufferedWriter(new FileWriter("/home/theanhly/Schreibtisch/evaluation-spark.log", true));
             if(stringArr[0].equals("START_DATA"))
                 writer.append("===============START SPARK===============\n");
 

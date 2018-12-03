@@ -19,7 +19,7 @@ import java.io.Serializable;
 import java.util.LinkedList;
 import java.util.List;
 
-public class FlinkOutputOperator extends RichSinkFunction<Serializable> implements IDSPOutputOperator, IMessageBufferFunction, IMessageBufferListener, ListCheckpointed<byte[]> {
+public class FlinkOutputOperator extends RichSinkFunction<Serializable> implements IDSPOutputOperator, IMessageBufferFunction, IMessageBufferListener/*, ListCheckpointed<byte[]> */{
     private boolean transform;
     private volatile boolean isRunning = true;
     private final DSPConnectorConfig config;
@@ -99,6 +99,7 @@ public class FlinkOutputOperator extends RichSinkFunction<Serializable> implemen
     public void close() {
         this.isRunning = false;
         SocketPool.getInstance().stopSockets(this.config);
+        DSPManager.getInstance().stopRouter(this.config);
     }
 
     @Override
@@ -111,26 +112,28 @@ public class FlinkOutputOperator extends RichSinkFunction<Serializable> implemen
         return message;
     }
 
-    @Override
+    /*@Override
     public List<byte[]> snapshotState(long checkpointId, long timestamp) throws Exception {
-        System.out.println("snapshotState.....");
         ZMsg zmsg = DSPManager.getInstance().getBuffer(this.messageBufferConnectionString).flushBuffer(this, false);
         List<byte[]> list = new LinkedList<>();
-        for(ZFrame frame: zmsg )
+        for(ZFrame frame : zmsg) {
+            System.out.println("snapshotState..... save frame: " + frame.toString());
             list.add(frame.getData());
+        }
 
         return list;
-    }
+    }*/
 
-    @Override
+    /*@Override
     public void restoreState(List<byte[]> state) throws Exception {
         for(byte[] bytes : state) {
             // block while the buffer is full
             while(DSPManager.getInstance().getBuffer(this.messageBufferConnectionString).isFull()) {}
 
+            System.out.println("restoreState.... writing bytes to buffer");
             DSPManager.getInstance().getBuffer(this.messageBufferConnectionString).writeBuffer(bytes);
         }
-    }
+    }*/
 
     @Override
     public void bufferIsFullEvent() {

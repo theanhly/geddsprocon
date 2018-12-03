@@ -15,10 +15,10 @@ import java.util.HashSet;
 public class DSPManager {
 
     private ArrayList<Tuple3<String, Integer, String>> addresses;
-    private ArrayList<Thread> requesterThreads;
     private String messageBufferConnectionString;
     private HashMap<String, MessageBuffer> bufferProcessMap;
-    private HashMap<String, DSPRouter> dspRouterMap;
+    private HashMap<String, Thread> dspRouterMap;
+    private HashMap<IDSPInputOperator, Thread> inputOpRequesterThreadMap;
     private HashMap<IDSPInputOperator, MessageBuffer> inputOpBufferMap;
     private static final Object dspManagerLock = new Object();
     private static final Object dspRouterLock = new Object();
@@ -33,7 +33,7 @@ public class DSPManager {
 
     private DSPManager() {
         this.addresses = new ArrayList<>();
-        this.requesterThreads = new ArrayList<>();
+        this.inputOpRequesterThreadMap = new HashMap<>();
         this.bufferProcessMap = new HashMap<>();
         this.inputOpBufferMap = new HashMap<>();
         this.dspRouterMap = new HashMap<>();
@@ -56,14 +56,14 @@ public class DSPManager {
      * Start all DSP requester threads which connect to the output operators and request data.
      * @param config DSP connector config which has all the output operator addresses
      */
-    public void startDSPRequesters(DSPConnectorConfig config, MessageBuffer messageBuffer) {
+    private void startDSPRequesters(DSPConnectorConfig config, MessageBuffer messageBuffer, IDSPInputOperator inputOp) {
         this.addresses = config.getRequestAddresses();
 
         for(Tuple3<String, Integer, String> tuple : this.addresses) {
 
             Thread requesterThread = new Thread(new DSPRequester(tuple.f0, tuple.f1, tuple.f2, messageBuffer));
             requesterThread.start();
-            this.requesterThreads.add(requesterThread);
+            this.inputOpRequesterThreadMap.put(inputOp, requesterThread);
         }
     }
 
@@ -90,15 +90,15 @@ public class DSPManager {
             SocketPool.getInstance().createSockets(SocketPool.SocketType.PULL, config);
         } else if(config.getSocketType() == SocketPool.SocketType.REQ || config.getSocketType() == SocketPool.SocketType.DEFAULT) {
             SocketPool.getInstance().createSockets(SocketPool.SocketType.REQ, config);
-            startDSPRequesters(config, messageBuffer);
+            startDSPRequesters(config, messageBuffer, inputOp);
         }
     }
 
     public void initiateOutputOperator(DSPConnectorConfig config,  IDSPOutputOperator outputOp) {
         // if no sockettype is defined use the default socket type
         SocketPool.getInstance().createSockets(config.getSocketType() == SocketPool.SocketType.DEFAULT ? SocketPool.SocketType.ROUTER : SocketPool.SocketType.PUSH, config);
-        String messageBufferString = "";
         String routerAddress = config.getHost() + ":" + config.getPort();
+        String messageBufferString = Strings.isNullOrEmpty(config.getBufferConnectionString()) ? routerAddress : config.getBufferConnectionString();
         MessageBuffer messageBuffer = null;
 
         if(!this.bufferProcessMap.containsKey(messageBufferString)) {
@@ -113,7 +113,6 @@ public class DSPManager {
         // initiate the router if the router only if a router with the same host:port hasn't been started yet
         synchronized (this.getDspManagerLock()) {
             if(!this.dspRouterMap.containsKey(routerAddress)) {
-                System.out.println("Starting router");
                 DSPRouter router = new DSPRouter(config.getHost(), config.getPort(), outputOp.getBufferFunction(), messageBufferString);
                 // add the manager as a listener to the message buffer
                 messageBuffer.addListener(router);
@@ -123,7 +122,30 @@ public class DSPManager {
                 // start the manager thread
                 Thread routerThread = new Thread(router);
                 routerThread.start();
-                this.dspRouterMap.put(routerAddress, router);
+                this.dspRouterMap.put(routerAddress, routerThread);
+            }
+        }
+    }
+
+    public void stopRequester(IDSPInputOperator inputOperator) {
+
+        synchronized (this.getDspManagerLock()) {
+            if(this.inputOpRequesterThreadMap.containsKey(inputOperator)) {
+                Thread routerThread = this.inputOpRequesterThreadMap.get(inputOperator);
+                routerThread.interrupt();
+                this.inputOpRequesterThreadMap.remove(inputOperator);
+            }
+        }
+    }
+
+    public void stopRouter(DSPConnectorConfig config) {
+        String routerAddress = config.getHost() + ":" + config.getPort();
+
+        synchronized (this.getDspManagerLock()) {
+            if(this.dspRouterMap.containsKey(routerAddress)) {
+                Runnable routerThread = this.dspRouterMap.get(routerAddress);
+                ((Thread) routerThread).interrupt();
+                this.dspRouterMap.remove(routerAddress);
             }
         }
     }

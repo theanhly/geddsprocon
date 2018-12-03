@@ -16,6 +16,7 @@ public class DSPRequester implements Runnable {
     private long messageNumber;
     private String messageBufferConnectionString;
     private MessageBuffer messageBuffer;
+    private boolean isRunning;
 
     public DSPRequester(String host, int port, String connectorType, MessageBuffer messageBuffer) {
         this.host = host;
@@ -24,6 +25,7 @@ public class DSPRequester implements Runnable {
         this.messageBufferConnectionString = messageBufferConnectionString;
         this.messageNumber = -1;
         this.messageBuffer = messageBuffer;
+        this.isRunning = true;
     }
 
     /**
@@ -35,7 +37,7 @@ public class DSPRequester implements Runnable {
 
         try {
             ZMQ.Socket socket;
-            while(true) {
+            while(this.isRunning || !Thread.interrupted()) {
 
                 //might need to lock until receive. can cause ZMQException where it receives while the socket is used by the other requester.
                 // alternative way to send a multipart message
@@ -74,10 +76,16 @@ public class DSPRequester implements Runnable {
                     }
                 }
             }
+            System.err.println("Stopping requester,,, after");
         } catch(ZMQException ex) {
             System.err.println("ZMQException in thread " + Thread.currentThread().getId());
             System.err.println(ex.toString());
             System.err.println(ex.getStackTrace());
         }
+    }
+
+    public void stop() {
+        System.err.println("requester requester,,, ");
+        this.isRunning = false;
     }
 }

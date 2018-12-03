@@ -32,21 +32,21 @@ public class FlinkOutput {
                             .build()), TypeInformation.of(String.class))
                     .flatMap(new StringSplitter());
 
-            DataStream<Tuple2<String, Integer>> dataStream = wordStream
+            /*DataStream<Tuple2<String, Integer>> dataStream = wordStream
                     .keyBy("f0")
                     .timeWindow(Time.seconds(5))
                     .sum("f1");
-                    //.flatMap(new TupleMapper());
+                    //.flatMap(new TupleMapper());*/
 
             /*DataStream<Tuple2<String, Integer>> dataStream2 = dataStream
                     .keyBy("f0")
                     .timeWindow(Time.seconds(20))
                     .sum("f1");*/
 
-            dataStream.addSink((SinkFunction)DSPConnectorFactory.getInstance().createOutputOperator(new DSPConnectorConfig.Builder(host, outPutPort)
+            wordStream.addSink((SinkFunction)DSPConnectorFactory.getInstance().createOutputOperator(new DSPConnectorConfig.Builder(host, outPutPort)
                     .withDSP("flink")
-                    .withHWM(150000)
-                    .withBufferConnectorString("sendbuffer")
+                    .withHWM(1000)
+                    //.withBufferConnectorString("sendbuffer")
                     .withTimeout(5000)
                     .build()));
 

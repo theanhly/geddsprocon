@@ -40,8 +40,10 @@ public class SparkInputOperator extends Receiver<Serializable> implements IDSPIn
 
     @Override
     public void onStop() {
-        if(isStopped())
+        if(isStopped()) {
             SocketPool.getInstance().stopSocket(this.host, this.port);
+            DSPManager.getInstance().stopRequester(this);
+        }
 
     }
 

@@ -88,6 +88,7 @@ public class FlinkInputOperator extends RichParallelSourceFunction<Serializable>
 
         try {
             SocketPool.getInstance().stopSocket(this.host, this.port);
+            DSPManager.getInstance().stopRequester(this);
         } catch (IllegalArgumentException  ex) {
             System.err.println(ex.toString());
         }

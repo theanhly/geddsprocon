@@ -17,7 +17,7 @@ public class StringSplitter implements FlatMapFunction<String, Tuple2<String, In
         this.lines++;
         for (String word: sentence.split(" ")) {
             if(word.equals("START_DATA") || word.equals("END_DATA")) {
-                BufferedWriter writer = new BufferedWriter(new FileWriter("/home/theanhly/Schreibtisch/test.log", true));
+                BufferedWriter writer = new BufferedWriter(new FileWriter("/home/theanhly/Schreibtisch/evaluation.log", true));
                 if(word.equals("START_DATA"))
                     writer.append("===============START===============\n");
 

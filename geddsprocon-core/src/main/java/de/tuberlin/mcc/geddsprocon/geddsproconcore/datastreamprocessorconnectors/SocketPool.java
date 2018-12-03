@@ -213,10 +213,11 @@ public class SocketPool {
         for(Tuple2<String, Integer> tuple : config.getAddresses())
             stopSocket(tuple.f0, tuple.f1);
 
-        if(this.context != null) {
+        // do not terminate sockets because it could lead to exception when an operator is restarted
+        /*if(this.context != null) {
             this.context.term();
             this.context = null;
-        }
+        }*/
     }
 
     public synchronized void stopSocket(String host, int port) {
