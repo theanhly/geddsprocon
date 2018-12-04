@@ -180,7 +180,7 @@
                             </filters>
                             <transformers>
                                 <transformer implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
-                                    <mainClass>de.tuberlin.mcc.geddsprocon.geddsproconevaluation.firstpart.spark.CompletePipeline</mainClass>
+                                    <mainClass>de.tuberlin.mcc.geddsprocon.geddsproconevaluation.secondpart.flink.CompletePipeline</mainClass>
                                 </transformer>
                             </transformers>
                         </configuration>
