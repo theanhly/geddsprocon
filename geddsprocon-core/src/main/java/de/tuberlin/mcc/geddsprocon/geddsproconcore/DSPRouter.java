@@ -16,6 +16,7 @@ public class DSPRouter implements Runnable, IMessageBufferListener {
 
     private String host;
     private int port;
+    private String routerAdress;
     private volatile IMessageBufferFunction bufferFunction;
     private volatile LinkedList<ZFrame> endpointQueue;
     private volatile HashSet<ZFrame> endpointSet;
@@ -24,27 +25,27 @@ public class DSPRouter implements Runnable, IMessageBufferListener {
     private boolean resendPrevBuffer;
     private int lastReceivedMessageNumber;
     private String messageBufferConnectionString;
+    private boolean isRunning;
 
     public DSPRouter(String host, int port, IMessageBufferFunction bufferFunction, String messageBufferConnectionString) {
         this.host = host;
         this.port = port;
-        this.bufferFunction = bufferFunction;
         this.messageBufferConnectionString = messageBufferConnectionString;
+        this.routerAdress = Strings.isNullOrEmpty(messageBufferConnectionString) ? host + ":" + port : messageBufferConnectionString;
+        this.bufferFunction = bufferFunction;
         this.endpointQueue = new LinkedList<>();
         this.endpointSet = new HashSet<>();
         this.socket = SocketPool.getInstance().getOrCreateSocket(this.host, this.port);
         this.resendPrevBuffer = false;
         this.lastReceivedMessageNumber = -1;
-
-        if(messageBufferConnectionString == null || messageBufferConnectionString.isEmpty())
-            System.err.println("Buffer string cannot be null or empty");
+        this.isRunning = true;
     }
 
     @Override
     public void run() {
+        System.out.println("Starting router @" + routerAdress);
 
-
-        while(true) {
+        while(this.isRunning || !Thread.interrupted()) {
             //System.out.println("Trying to receive");
             ZMsg msg = ZMsg.recvMsg(this.socket);
 
@@ -54,27 +55,31 @@ public class DSPRouter implements Runnable, IMessageBufferListener {
 
                 //  Second frame is empty in a REQ socket. Second frame of DEALER socket is not empty
                 String empty = new String(msg.pop().getData());
+                //System.out.println(empty);
                 assert (empty.length() == 0);
 
                 String ready = new String(msg.pop().getData());
                 assert(ready.length() > 0);
 
-                this.lastReceivedMessageNumber = Math.max(Integer.parseInt(msg.pop().toString()), this.lastReceivedMessageNumber);
+                if(this.temporaryPrimary != null && this.temporaryPrimary.hasData() && this.temporaryPrimary.getData().equals(address.getData()))
+                    this.lastReceivedMessageNumber = Integer.parseInt(msg.pop().toString()) /*Math.max(Integer.parseInt(msg.pop().toString()), this.lastReceivedMessageNumber)*/;
 
                 if(ready.equals(DSPConnectorFactory.ConnectorType.PRIMARY)) {
-                    //System.out.println(DSPConnectorFactory.ConnectorType.PRIMARY + " message received");
+                    //System.out.println(DSPConnectorFactory.ConnectorType.PRIMARY +" message received with id: "  + this.lastReceivedMessageNumber);
 
-                    if(reply(address)) {
-                        this.temporaryPrimary = address;
-                    } else {
+                    this.temporaryPrimary = address.duplicate();
+
+                    if(!reply(address)) {
+                        //System.out.println("New primary");
+                        this.temporaryPrimary = null;
                         System.out.println("Message could not be sent.");
                     }
                 } else if(ready.equals(DSPConnectorFactory.ConnectorType.SECONDARY)) {
-                    //System.out.println(DSPConnectorFactory.ConnectorType.SECONDARY +" message received");
+                    //System.out.println(DSPConnectorFactory.ConnectorType.SECONDARY +" message received with id: "  + this.lastReceivedMessageNumber);
 
                     if(this.temporaryPrimary != null && this.temporaryPrimary.hasData() && this.temporaryPrimary.getData().equals(address.getData()))
                         reply(address);
-                    else if(DSPManager.getInstance().getBuffer(this.messageBufferConnectionString).isFull()) {
+                    else if(DSPManager.getInstance().getBuffer(this.host + ":" + this.port).isFull()/*DSPManager.getInstance().getBuffer(this.messageBufferConnectionString).isFull()*/) {
                         this.temporaryPrimary = address.duplicate();
                         reply(address);
                     }
@@ -83,6 +88,7 @@ public class DSPRouter implements Runnable, IMessageBufferListener {
                 }
             }
         }
+        System.err.println("requester router,,, after");
     }
 
     /**
@@ -95,10 +101,10 @@ public class DSPRouter implements Runnable, IMessageBufferListener {
             addressFrame = this.endpointQueue.pop();
             this.temporaryPrimary = addressFrame.duplicate();
             this.endpointSet.remove(addressFrame);
-            System.out.println("Address popped");
+            //System.out.println("Address popped");
         } while(!reply(addressFrame));
 
-        System.out.println("Reply sent");
+        System.out.println("Reply sent to " + addressFrame.toString());
         return true;
     }
 
@@ -116,25 +122,31 @@ public class DSPRouter implements Runnable, IMessageBufferListener {
 
         boolean resendPrevBuffer = false;
 
-        long currentMessages = DSPManager.getInstance().getBuffer(this.messageBufferConnectionString).getSentMessages();
+        long currentMessages = DSPManager.getInstance().getBuffer(this.routerAdress).getSentMessages();
 
+        //System.out.println("currentMessages: " + currentMessages);
         if(currentMessages > 1 && (this.lastReceivedMessageNumber + 1 != currentMessages || (this.lastReceivedMessageNumber == MessageBuffer.RESETMESSAGENUMBER && currentMessages != 1))) {
             resendPrevBuffer = true;
         }
 
-        if(!resendPrevBuffer && DSPManager.getInstance().getBuffer(this.messageBufferConnectionString).isEmpty()) {
+        if(!resendPrevBuffer && DSPManager.getInstance().getBuffer(this.routerAdress).isEmpty()) {
             message.add("");
             return message.send(this.socket);
         }
 
-        Object bufferLock = DSPManager.getInstance().getBuffer(this.messageBufferConnectionString).getBufferLock();
+        Object bufferLock = DSPManager.getInstance().getBuffer(this.routerAdress).getBufferLock();
         synchronized (bufferLock) {
-            message.append(DSPManager.getInstance().getBuffer(this.messageBufferConnectionString).flushBuffer(this.bufferFunction, false, resendPrevBuffer));
-            System.out.println("Sending message " + message.toString());
+            if(resendPrevBuffer)
+                System.out.println("Resending buffer: " + this.lastReceivedMessageNumber);
+            /*else
+                System.out.println("Sending new  buffer");*/
+            ZMsg buffermsg = DSPManager.getInstance().getBuffer(this.routerAdress).flushBuffer(this.bufferFunction, false, resendPrevBuffer);
+            message.append(buffermsg);
+            //System.out.println("Sending message with message: " + buffermsg.peek());
             if(message.send(this.socket)) {
                 // only clear buffer after sending has been successful and the previous buffer wasn't sent
                 if(!resendPrevBuffer)
-                    DSPManager.getInstance().getBuffer(this.messageBufferConnectionString).clearBuffer();
+                    DSPManager.getInstance().getBuffer(this.routerAdress).clearBuffer();
 
                 return true;
             } else {
@@ -149,11 +161,20 @@ public class DSPRouter implements Runnable, IMessageBufferListener {
      */
     @Override
     public void bufferIsFullEvent() {
-        while(this.endpointQueue.isEmpty() && DSPManager.getInstance().getBuffer(this.messageBufferConnectionString).isFull()) {}
+        while(this.endpointQueue.isEmpty() && DSPManager.getInstance().getBuffer(this.routerAdress).isFull()) {}
 
-        //this.resendPrevBuffer = true;
-        System.out.println("Buffer event");
-        if(DSPManager.getInstance().getBuffer(this.messageBufferConnectionString).isFull())
+        //System.out.println("Buffer event");
+        if(DSPManager.getInstance().getBuffer(this.routerAdress).isFull())
             reply();
+    }
+
+    @Override
+    public void bufferClearedEvent() {
+        // Nothing to do if the buffer has been cleared
+    }
+
+    public void stop() {
+        System.err.println("Stopping router,,,");
+        this.isRunning = false;
     }
 }
