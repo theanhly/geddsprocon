@@ -24,10 +24,12 @@ public class SocketPool {
 
 
     private volatile ConcurrentHashMap<String, ZMQ.Socket> sockets;
+    private volatile ConcurrentHashMap<String, ZMQ.Socket> checkedOutSockets;
     private static volatile ZMQ.Context context;
 
     private SocketPool() {
         this.sockets = new ConcurrentHashMap<>();
+        this.checkedOutSockets = new ConcurrentHashMap<>();
         this.context = ZMQ.context(1);
     }
 
@@ -36,6 +38,13 @@ public class SocketPool {
                     "([01]?\\d\\d?|2[0-4]\\d|25[0-5])\\." +
                     "([01]?\\d\\d?|2[0-4]\\d|25[0-5])\\." +
                     "([01]?\\d\\d?|2[0-4]\\d|25[0-5])$";
+
+    public synchronized void checkInSocket(String host, int port) {
+        String key = host + ":" + port;
+        ZMQ.Socket clientSocket = this.checkedOutSockets.get(key);
+        this.sockets.put(key, clientSocket);
+        this.checkedOutSockets.remove(key);
+    }
 
     public synchronized ZMQ.Socket getOrCreateSocket(String host, int port) throws IllegalArgumentException {
         return getOrCreateSocket(null, host, port, null);
@@ -48,7 +57,11 @@ public class SocketPool {
         String key = host + ":" + port;
         if(this.sockets.containsKey(key)) {
             ZMQ.Socket clientSocket = this.sockets.get(key);
+            this.checkedOutSockets.put(key, clientSocket);
+            this.sockets.remove(key);
             return clientSocket;
+        } else if (this.checkedOutSockets.containsKey(key)){
+            return null;
         } else {
             if(config == null) {
                 throw new NullArgumentException("DSP connector config needs to be defined");
@@ -79,6 +92,9 @@ public class SocketPool {
 
         if(this.sockets.containsKey(key))
             return this.sockets.get(key);
+
+        if(this.checkedOutSockets.containsKey(key))
+            return this.checkedOutSockets.get(key);
 
         if (socketType == null)
             throw new IllegalArgumentException(String.format("Socket with host {0} and port {1} not found. Parameter socketType needs to be defined.", host, port));
@@ -119,11 +135,10 @@ public class SocketPool {
                 break;
             case REQ:
                 socket = this.context.socket(ZMQ.REQ);
-                // hard code timeout
                 socket.setReceiveTimeOut(config.getTimeout());
                 socket.setImmediate(true);
                 socket.setReqRelaxed(true);
-                socket.setHWM(0);
+                socket.setSndHWM(1);
                 socket.connect("tcp://"+  key);
                 break;
             case DEALER:
@@ -159,7 +174,13 @@ public class SocketPool {
     public synchronized byte[] receiveSocket(String host, int port) {
         ZMQ.Socket socket = getOrCreateSocket(host, port);
         // non blocking receive needed
-        return socket.recv(ZMQ.DONTWAIT);
+        if(socket != null) {
+            byte[] message = socket.recv(ZMQ.DONTWAIT);
+            checkInSocket(host, port);
+            return message;
+        }
+
+        return null;
     }
 
     @Deprecated
@@ -192,10 +213,11 @@ public class SocketPool {
         for(Tuple2<String, Integer> tuple : config.getAddresses())
             stopSocket(tuple.f0, tuple.f1);
 
-        if(this.context != null) {
+        // do not terminate sockets because it could lead to exception when an operator is restarted
+        /*if(this.context != null) {
             this.context.term();
             this.context = null;
-        }
+        }*/
     }
 
     public synchronized void stopSocket(String host, int port) {
@@ -205,6 +227,12 @@ public class SocketPool {
             ZMQ.Socket clientSocket = this.sockets.get(key);
             clientSocket.close();
             this.sockets.remove(key);
+        }
+
+        if(this.checkedOutSockets.containsKey(key)) {
+            ZMQ.Socket clientSocket = this.checkedOutSockets.get(key);
+            clientSocket.close();
+            this.checkedOutSockets.remove(key);
         }
     }
 }

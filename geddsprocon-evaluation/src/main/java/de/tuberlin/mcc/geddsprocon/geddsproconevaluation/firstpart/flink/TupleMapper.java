@@ -13,12 +13,12 @@ public class TupleMapper implements FlatMapFunction<Tuple2<String, Integer>, Tup
 
     @Override
     public void flatMap(Tuple2<String, Integer> inputTuple, Collector<Tuple2<String, Integer>> out) throws Exception {
-        if(inputTuple.f0.equals("START_DATA") || inputTuple.f0.equals("END_DATA")) {
+        if(inputTuple.f0.equals("END_DATA")) {
             BufferedWriter writer = new BufferedWriter(new FileWriter("/home/theanhly/Schreibtisch/test.log", true));
             writer.append(inputTuple.f0 + ": " + LocalDateTime.now() + "\n");
 
             if(inputTuple.f0.equals("END_DATA"))
-                writer.append("Counter: " + this.counter + "\n" + "==============================\n");
+                writer.append("Counter: " + this.counter + "\n" + "===============END_DATA AT TUPLEMAPPER===============\n");
 
             writer.close();
         } else {
