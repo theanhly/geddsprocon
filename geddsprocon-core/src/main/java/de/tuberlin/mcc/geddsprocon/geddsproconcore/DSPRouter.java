@@ -96,18 +96,20 @@ public class DSPRouter implements Runnable, IMessageBufferListener {
      * @return return true if sending was successful
      */
     private synchronized boolean reply() {
-        ZFrame addressFrame = null;
-        do {
-            if(this.endpointQueue.size() > 0) {
+        if(DSPManager.getInstance().getBuffer(this.routerAdress).isFull() &&  this.endpointQueue != null && this.endpointQueue.size() > 0) {
+            ZFrame addressFrame = null;
+            do {
                 addressFrame = this.endpointQueue.pop();
                 this.temporaryPrimary = addressFrame.duplicate();
                 this.endpointSet.remove(addressFrame);
                 //System.out.println("Address popped");
-            }
-        } while(addressFrame != null && !reply(addressFrame));
+            } while(addressFrame != null && !reply(addressFrame));
 
-        //System.out.println("Reply sent to " + addressFrame.toString());
-        return true;
+            System.out.println("Reply sent to " + addressFrame.toString());
+            return true;
+        }
+
+        return false;
     }
 
     /**
@@ -163,9 +165,9 @@ public class DSPRouter implements Runnable, IMessageBufferListener {
      */
     @Override
     public void bufferIsFullEvent() {
-        while(this.endpointQueue.isEmpty() && DSPManager.getInstance().getBuffer(this.routerAdress).isFull()) {}
+        //while(this.endpointQueue.isEmpty() && DSPManager.getInstance().getBuffer(this.routerAdress).isFull()) {}
 
-        //System.out.println("Buffer event");
+        System.out.println("Buffer event");
         if(DSPManager.getInstance().getBuffer(this.routerAdress).isFull())
             reply();
     }
