@@ -95,16 +95,18 @@ public class DSPRouter implements Runnable, IMessageBufferListener {
      * go through the queue and send to the addresses in the queue
      * @return return true if sending was successful
      */
-    private boolean reply() {
-        ZFrame addressFrame;
+    private synchronized boolean reply() {
+        ZFrame addressFrame = null;
         do {
-            addressFrame = this.endpointQueue.pop();
-            this.temporaryPrimary = addressFrame.duplicate();
-            this.endpointSet.remove(addressFrame);
-            //System.out.println("Address popped");
-        } while(!reply(addressFrame));
+            if(this.endpointQueue.size() > 0) {
+                addressFrame = this.endpointQueue.pop();
+                this.temporaryPrimary = addressFrame.duplicate();
+                this.endpointSet.remove(addressFrame);
+                //System.out.println("Address popped");
+            }
+        } while(addressFrame != null && !reply(addressFrame));
 
-        System.out.println("Reply sent to " + addressFrame.toString());
+        //System.out.println("Reply sent to " + addressFrame.toString());
         return true;
     }
 
