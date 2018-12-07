@@ -15,7 +15,7 @@ public class CompletePipeline {
 
     public static void main(String[] args) {
         try{
-            String host = "192.168.178.189";
+            String host = "localhost";
             int port = 9665;
             String file = "/home/theanhly/Schreibtisch/amazon_reviews_us_Video_DVD_v1_00.tsv";
             Thread zeroMQDataProviderThread = new Thread(new ZeroMQDataProvider(host, port, file));

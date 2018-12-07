@@ -98,8 +98,8 @@ public class FlinkOutputOperator extends RichSinkFunction<Serializable> implemen
     @Override
     public void close() {
         this.isRunning = false;
-        SocketPool.getInstance().stopSockets(this.config);
         DSPManager.getInstance().stopRouter(this.config);
+        SocketPool.getInstance().stopSockets(this.config);
     }
 
     @Override

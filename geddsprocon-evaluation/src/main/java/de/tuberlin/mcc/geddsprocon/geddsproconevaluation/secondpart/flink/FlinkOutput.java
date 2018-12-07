@@ -15,9 +15,15 @@ public class FlinkOutput {
 
     public static void main(String[] args) {
         try{
-            String host = "192.168.178.189";
+            String host = "127.0.0.1";
             int inputPort = 9665;
             int outPutPort = 9656;
+
+            if(args.length > 2) {
+                host = args[0];
+                outPutPort = Integer.parseInt(args[1]);
+            }
+
             String file = "/home/theanhly/Schreibtisch/amazon_reviews_us_Video_DVD_v1_00.tsv";
             Thread zeroMQDataProviderThread = new Thread(new ZeroMQDataProvider(host, inputPort, file));
             zeroMQDataProviderThread.start();

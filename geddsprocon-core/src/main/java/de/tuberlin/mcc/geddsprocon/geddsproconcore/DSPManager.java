@@ -131,8 +131,13 @@ public class DSPManager {
 
         synchronized (this.getDspManagerLock()) {
             if(this.inputOpRequesterThreadMap.containsKey(inputOperator)) {
-                Thread routerThread = this.inputOpRequesterThreadMap.get(inputOperator);
-                routerThread.interrupt();
+                Thread requesterThread = this.inputOpRequesterThreadMap.get(inputOperator);
+                requesterThread.interrupt();
+                try {
+                    requesterThread.join();
+                } catch(InterruptedException ex) {
+                    System.out.println("Requester thread interrupted.");
+                }
                 this.inputOpRequesterThreadMap.remove(inputOperator);
             }
         }
@@ -143,8 +148,13 @@ public class DSPManager {
 
         synchronized (this.getDspManagerLock()) {
             if(this.dspRouterMap.containsKey(routerAddress)) {
-                Runnable routerThread = this.dspRouterMap.get(routerAddress);
-                ((Thread) routerThread).interrupt();
+                Thread routerThread = this.dspRouterMap.get(routerAddress);
+                routerThread.interrupt();
+                try {
+                    routerThread.join();
+                } catch(InterruptedException ex) {
+                    System.out.println("Router thread interrupted.");
+                }
                 this.dspRouterMap.remove(routerAddress);
             }
         }

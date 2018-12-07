@@ -13,8 +13,13 @@ public class FlinkInput {
 
     public static void main(String[] args) {
         try{
-            String host = "192.168.178.189";
+            String host = "127.0.0.1";
             int inputPort = 9656;
+
+            if(args.length > 1) {
+                host = args[0];
+                inputPort = Integer.parseInt(args[1]);
+            }
 
             StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
 
