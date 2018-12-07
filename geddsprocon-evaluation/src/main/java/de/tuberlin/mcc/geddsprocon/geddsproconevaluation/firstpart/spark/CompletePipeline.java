@@ -15,7 +15,7 @@ import org.apache.spark.streaming.receiver.Receiver;
 
 public class CompletePipeline {
     public static void main(String[] args) throws InterruptedException {
-        String host = "192.168.178.187";
+        String host = "127.0.0.1";
         int inputPort = 9665;
         int outPutPort = 9656;
         String file = "/home/theanhly/Schreibtisch/amazon_reviews_us_Video_DVD_v1_00.tsv";

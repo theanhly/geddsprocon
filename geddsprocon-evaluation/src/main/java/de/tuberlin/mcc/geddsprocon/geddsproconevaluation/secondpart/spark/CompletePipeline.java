@@ -17,7 +17,7 @@ import org.apache.spark.streaming.receiver.Receiver;
 public class CompletePipeline {
 
     public static void main(String[] args) throws InterruptedException {
-        String host = "192.168.178.189";
+        String host = "127.0.0.1";
         int inputPort = 9665;
         int outPutPort = 9656;
         String file = "/home/theanhly/Schreibtisch/amazon_reviews_us_Video_DVD_v1_00.tsv";
@@ -25,8 +25,8 @@ public class CompletePipeline {
         zeroMQDataProviderThread.start();
 
         SparkConf sparkConf = new SparkConf()
-                .setAppName("Spark_complete_word_count_pipeline")
-                .setMaster("local[*]"); // use local as master if test is run locally
+                .setAppName("Spark_complete_word_count_pipeline");
+                //.setMaster("local[*]"); // use local as master if test is run locally
         JavaStreamingContext ssc = new JavaStreamingContext(sparkConf, new Duration(5000));
 
 

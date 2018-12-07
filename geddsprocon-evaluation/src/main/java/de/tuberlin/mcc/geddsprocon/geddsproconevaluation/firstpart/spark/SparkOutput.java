@@ -20,6 +20,12 @@ public class SparkOutput {
         String host = "192.168.56.102";
         int inputPort = 9665;
         int outPutPort = 9656;
+
+        if(args.length > 2) {
+            host = args[0];
+            outPutPort = Integer.parseInt(args[1]);
+        }
+
         String file = "/home/theanhly/Schreibtisch/amazon_reviews_us_Video_DVD_v1_00.tsv";
         Thread zeroMQDataProviderThread = new Thread(new ZeroMQDataProvider(host, inputPort, file));
         zeroMQDataProviderThread.start();
@@ -54,7 +60,7 @@ public class SparkOutput {
 
         wordCounts.foreachRDD((VoidFunction)DSPConnectorFactory.getInstance().createOutputOperator(new DSPConnectorConfig.Builder(host, outPutPort)
                 .withDSP("spark")
-                .withHWM(150000)
+                .withHWM(1000)
                 .withTimeout(10000)
                 .build()));
 

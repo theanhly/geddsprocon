@@ -10,6 +10,7 @@ import org.apache.flink.streaming.api.datastream.DataStream;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 import org.apache.flink.streaming.api.functions.sink.SinkFunction;
 import org.apache.flink.streaming.api.functions.source.SourceFunction;
+import org.apache.flink.streaming.api.windowing.time.Time;
 
 public class FlinkOutput {
 
@@ -37,18 +38,12 @@ public class FlinkOutput {
                             .build()), TypeInformation.of(String.class))
                     .flatMap(new StringSplitter());
 
-            /*DataStream<Tuple2<String, Integer>> dataStream = wordStream
+            DataStream<Tuple2<String, Integer>> dataStream = wordStream
                     .keyBy("f0")
                     .timeWindow(Time.seconds(5))
                     .sum("f1");
-                    //.flatMap(new TupleMapper());*/
 
-            /*DataStream<Tuple2<String, Integer>> dataStream2 = dataStream
-                    .keyBy("f0")
-                    .timeWindow(Time.seconds(20))
-                    .sum("f1");*/
-
-            wordStream.addSink((SinkFunction)DSPConnectorFactory.getInstance().createOutputOperator(new DSPConnectorConfig.Builder(host, outPutPort)
+            dataStream.addSink((SinkFunction)DSPConnectorFactory.getInstance().createOutputOperator(new DSPConnectorConfig.Builder(host, outPutPort)
                     .withDSP("flink")
                     .withHWM(1000)
                     //.withBufferConnectorString("sendbuffer")

@@ -54,7 +54,7 @@ public class SparkOutput {
 
         wordCounts.foreachRDD((VoidFunction)DSPConnectorFactory.getInstance().createOutputOperator(new DSPConnectorConfig.Builder(host, outPutPort)
                 .withDSP("spark")
-                .withHWM(150000)
+                .withHWM(1000)
                 .withTimeout(10000)
                 .build()));
 
