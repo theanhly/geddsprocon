@@ -6,6 +6,7 @@ import de.tuberlin.mcc.geddsprocon.geddsproconcore.datastreamprocessorconnectors
 import de.tuberlin.mcc.geddsprocon.geddsproconevaluation.common.ZeroMQDataProvider;
 import org.apache.flink.api.common.typeinfo.TypeInformation;
 import org.apache.flink.api.java.tuple.Tuple2;
+import org.apache.flink.api.java.utils.ParameterTool;
 import org.apache.flink.streaming.api.datastream.DataStream;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 import org.apache.flink.streaming.api.functions.sink.SinkFunction;
@@ -16,9 +17,13 @@ public class FlinkOutput {
 
     public static void main(String[] args) {
         try{
-            String host = "192.168.178.189";
             int inputPort = 9665;
-            int outPutPort = 9656;
+
+            ParameterTool parameters = ParameterTool.fromArgs(args);
+            String host = parameters.get("host", "127.0.0.1");
+            int outPutPort = Integer.parseInt(parameters.get("port", "9656"));
+            int bufferSize = Integer.parseInt(parameters.getRequired("buffer"));
+
             String file = "/home/theanhly/Schreibtisch/amazon_reviews_us_Video_DVD_v1_00.tsv";
             Thread zeroMQDataProviderThread = new Thread(new ZeroMQDataProvider(host, inputPort, file));
             zeroMQDataProviderThread.start();
@@ -32,20 +37,9 @@ public class FlinkOutput {
                             .build()), TypeInformation.of(String.class))
                     .flatMap(new StringSplitter());
 
-            /*DataStream<Tuple2<String, Integer>> dataStream = wordStream
-                    .keyBy("f0")
-                    .timeWindow(Time.seconds(5))
-                    .sum("f1");
-                    //.flatMap(new TupleMapper());*/
-
-            /*DataStream<Tuple2<String, Integer>> dataStream2 = dataStream
-                    .keyBy("f0")
-                    .timeWindow(Time.seconds(20))
-                    .sum("f1");*/
-
             wordStream.addSink((SinkFunction)DSPConnectorFactory.getInstance().createOutputOperator(new DSPConnectorConfig.Builder(host, outPutPort)
                     .withDSP("flink")
-                    .withHWM(1000)
+                    .withHWM(bufferSize)
                     //.withBufferConnectorString("sendbuffer")
                     .withTimeout(5000)
                     .build()));

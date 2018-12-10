@@ -17,7 +17,8 @@ import org.apache.spark.streaming.receiver.Receiver;
 public class SparkOutput {
 
     public static void main(String[] args) throws InterruptedException {
-        String host = "192.168.56.102";
+        // Ip of this machine is 192.168.178.191
+        String host = "192.168.178.191";
         int inputPort = 9665;
         int outPutPort = 9656;
         String file = "/home/theanhly/Schreibtisch/amazon_reviews_us_Video_DVD_v1_00.tsv";
@@ -26,10 +27,11 @@ public class SparkOutput {
 
         SparkConf sparkConf = new SparkConf()
                 .setAppName("JavaCustomReceiver")
-                .set("spark.default.parallelism", "1")
-                .setMaster("local[2]")
-                .set("spark.executor.instances", "1")
-                .set("spark.task.cpus", "1");
+                //.set("spark.default.parallelism", "1")
+                //.set("spark.executor.instances", "1")
+                //.set("spark.task.cpus", "1")
+                .set("spark.executor.memory","4g")
+                .setMaster("local[*]");
         JavaStreamingContext ssc = new JavaStreamingContext(sparkConf, new Duration(5000));
 
 
@@ -54,7 +56,7 @@ public class SparkOutput {
 
         wordCounts.foreachRDD((VoidFunction)DSPConnectorFactory.getInstance().createOutputOperator(new DSPConnectorConfig.Builder(host, outPutPort)
                 .withDSP("spark")
-                .withHWM(1000)
+                .withHWM(20000)
                 .withTimeout(10000)
                 .build()));
 

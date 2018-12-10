@@ -17,11 +17,11 @@ import org.apache.spark.streaming.receiver.Receiver;
 public class SparkOutput {
 
     public static void main(String[] args) throws InterruptedException {
-        String host = "192.168.56.102";
+        String host = "192.168.178.191";
         int inputPort = 9665;
         int outPutPort = 9656;
 
-        if(args.length > 2) {
+        if(args.length > 1) {
             host = args[0];
             outPutPort = Integer.parseInt(args[1]);
         }
@@ -31,11 +31,13 @@ public class SparkOutput {
         zeroMQDataProviderThread.start();
 
         SparkConf sparkConf = new SparkConf()
-                .setAppName("JavaCustomReceiver")
-                .set("spark.default.parallelism", "1")
-                .setMaster("local[2]")
-                .set("spark.executor.instances", "1")
-                .set("spark.task.cpus", "1");
+                .setAppName("SparkOutput")
+                //.set("spark.worker.instances", "1")
+                //.set("spark.executor.instances", "1")
+                //.set("spark.task.cpus", "1")
+                .set("spark.streaming.backpressure.enabled", "true")
+                .set("spark.executor.memory","4g")
+                .setMaster("local[*]");
         JavaStreamingContext ssc = new JavaStreamingContext(sparkConf, new Duration(5000));
 
 
@@ -53,17 +55,13 @@ public class SparkOutput {
         //      Count each word in each batch
         JavaPairDStream<String, Integer> pairs = words.mapToPair(new StringMapper());
 
-        //      Cumulate the sum from each batch
-        JavaPairDStream<String, Integer> wordCounts = pairs.reduceByKey(
-                (Function2<Integer, Integer, Integer>) (i1, i2) -> i1 + i2
-        );
+        //pairs.foreachRDD((VoidFunction)DSPConnectorFactory.getInstance().createOutputOperator(new DSPConnectorConfig.Builder(host, outPutPort)
+        //        .withDSP("spark")
+        //        .withHWM(50000)
+        //        .withTimeout(10000)
+        //        .build()));
 
-        wordCounts.foreachRDD((VoidFunction)DSPConnectorFactory.getInstance().createOutputOperator(new DSPConnectorConfig.Builder(host, outPutPort)
-                .withDSP("spark")
-                .withHWM(1000)
-                .withTimeout(10000)
-                .build()));
-
+        pairs.print();
         ssc.start();
         ssc.awaitTermination();
     }

@@ -141,7 +141,7 @@ public class DSPRouter implements Runnable, IMessageBufferListener {
         Object bufferLock = DSPManager.getInstance().getBuffer(this.routerAdress).getBufferLock();
         synchronized (bufferLock) {
             if(resendPrevBuffer)
-                System.out.println("Resending buffer: " + this.lastReceivedMessageNumber);
+                System.out.println(Thread.currentThread().getId() + " ( Thread ID): Resending buffer: " + this.lastReceivedMessageNumber);
             /*else
                 System.out.println("Sending new  buffer");*/
             ZMsg buffermsg = DSPManager.getInstance().getBuffer(this.routerAdress).flushBuffer(this.bufferFunction, false, resendPrevBuffer);
@@ -167,7 +167,7 @@ public class DSPRouter implements Runnable, IMessageBufferListener {
     public void bufferIsFullEvent() {
         //while(this.endpointQueue.isEmpty() && DSPManager.getInstance().getBuffer(this.routerAdress).isFull()) {}
 
-        System.out.println("Buffer event");
+        //System.out.println("Buffer event");
         if(DSPManager.getInstance().getBuffer(this.routerAdress).isFull())
             reply();
     }

@@ -6,6 +6,7 @@ import de.tuberlin.mcc.geddsprocon.geddsproconcore.datastreamprocessorconnectors
 import org.apache.flink.api.common.typeinfo.TypeInformation;
 import org.apache.flink.api.java.tuple.Tuple2;
 import org.apache.flink.api.java.typeutils.TypeInfoParser;
+import org.apache.flink.api.java.utils.ParameterTool;
 import org.apache.flink.streaming.api.datastream.DataStream;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 import org.apache.flink.streaming.api.functions.sink.SinkFunction;
@@ -16,20 +17,17 @@ public class FlinkInput {
 
     public static void main(String[] args) {
         try{
-            String host = "127.0.0.1";
-            int inputPort = 9656;
-
-            if(args.length > 1) {
-                host = args[0];
-                inputPort = Integer.parseInt(args[1]);
-            }
+            ParameterTool parameters = ParameterTool.fromArgs(args);
+            String host = parameters.get("host", "127.0.0.1");
+            int inputPort = Integer.parseInt(parameters.get("port", "9656"));
+            int bufferSize = Integer.parseInt(parameters.getRequired("buffer"));
 
             StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
 
             DataStream<Tuple2<String, Integer>> dataStream = env
                     .addSource((SourceFunction)DSPConnectorFactory.getInstance().createInputOperator(new DSPConnectorConfig.Builder()
                             .withDSP("flink")
-                            .withHWM(1000)
+                            .withHWM(bufferSize)
                             .withTimeout(15000)
                             //.withBufferConnectorString("recvbuffer")
                             .withRequestAddress(host, inputPort, DSPConnectorFactory.ConnectorType.PRIMARY)
