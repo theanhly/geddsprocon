@@ -31,7 +31,8 @@ public class ZeroMQDataProvider implements Runnable {
             sender.connect("tcp://" + this.host + ":" + this.port);
 
             sender.send(SerializationTool.serialize("START_DATA"));
-            BufferedReader tsvReader = new BufferedReader(new FileReader(this.file));
+            FileReader reader = new FileReader(this.file);
+            BufferedReader tsvReader = new BufferedReader(reader);
             //BufferedWriter writer = new BufferedWriter(new FileWriter("/home/theanhly/Schreibtisch/reviews.txt", true));
 
             // skip first line
@@ -47,6 +48,8 @@ public class ZeroMQDataProvider implements Runnable {
             }
             System.out.println("ZeroMQDataProvider: Sending END_DATA" );
             sender.send(SerializationTool.serialize("END_DATA"));
+            tsvReader.close();
+            reader.close();
         } catch (FileNotFoundException ex) {
             System.err.println("File not found");
             System.err.println(ex.toString());
