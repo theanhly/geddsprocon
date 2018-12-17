@@ -11,13 +11,22 @@ import java.time.LocalDateTime;
 public class StringSplitter implements FlatMapFunction<String, Tuple2<String, Integer>> {
     private long counter = 0;
     private long lines = 0;
+    private String evaluationPathString;
+
+    public StringSplitter()  {
+        this("/home/theanhly/Schreibtisch/");
+    }
+
+    public StringSplitter (String evaluationPathString) {
+        this.evaluationPathString = evaluationPathString;
+    }
 
     @Override
     public void flatMap(String sentence, Collector<Tuple2<String, Integer>> out) throws Exception {
         this.lines++;
         for (String word: sentence.split(" ")) {
             if(word.equals("START_DATA") || word.equals("END_DATA")) {
-                BufferedWriter writer = new BufferedWriter(new FileWriter("/home/theanhly/Schreibtisch/evaluation.log", true));
+                BufferedWriter writer = new BufferedWriter(new FileWriter(evaluationPathString + "evaluation.log", true));
                 if(word.equals("START_DATA"))
                     writer.append("===============START===============\n");
 

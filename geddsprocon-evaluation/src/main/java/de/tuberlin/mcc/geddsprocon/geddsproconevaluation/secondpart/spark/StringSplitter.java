@@ -11,6 +11,15 @@ import java.util.Iterator;
 public class StringSplitter implements FlatMapFunction<String, String> {
     private long counter = 0;
     private long lines = 0;
+    private String evaluationPathString;
+
+    public StringSplitter()  {
+        this("/home/theanhly/Schreibtisch/");
+    }
+
+    public StringSplitter (String evaluationPathString) {
+        this.evaluationPathString = evaluationPathString;
+    }
 
     @Override
     public Iterator<String> call(String s) throws Exception {
@@ -18,7 +27,7 @@ public class StringSplitter implements FlatMapFunction<String, String> {
 
         this.lines++;
         if(stringArr.length == 1 && (stringArr[0].equals("START_DATA") || stringArr[0].equals("END_DATA"))) {
-            BufferedWriter writer = new BufferedWriter(new FileWriter("/home/theanhly/Schreibtisch/evaluation-spark.log", true));
+            BufferedWriter writer = new BufferedWriter(new FileWriter(evaluationPathString + "evaluation-spark.log", true));
             if(stringArr[0].equals("START_DATA"))
                 writer.append("===============START SPARK===============\n");
 

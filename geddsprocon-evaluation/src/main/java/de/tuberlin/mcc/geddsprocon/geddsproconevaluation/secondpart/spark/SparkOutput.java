@@ -4,6 +4,7 @@ import de.tuberlin.mcc.geddsprocon.geddsproconcore.DSPConnectorConfig;
 import de.tuberlin.mcc.geddsprocon.geddsproconcore.DSPConnectorFactory;
 import de.tuberlin.mcc.geddsprocon.geddsproconcore.datastreamprocessorconnectors.SocketPool;
 import de.tuberlin.mcc.geddsprocon.geddsproconevaluation.common.ZeroMQDataProvider;
+import org.apache.flink.api.java.utils.ParameterTool;
 import org.apache.spark.SparkConf;
 import org.apache.spark.api.java.function.Function2;
 import org.apache.spark.api.java.function.VoidFunction;
@@ -18,20 +19,25 @@ public class SparkOutput {
 
     public static void main(String[] args) throws InterruptedException {
         // Ip of this machine is 192.168.178.191
-        String host = "192.168.178.191";
         int inputPort = 9665;
-        int outPutPort = 9656;
+
+        ParameterTool parameters = ParameterTool.fromArgs(args);
+        String host = parameters.get("host", "127.0.0.1");
+        int outPutPort = Integer.parseInt(parameters.get("port", "9656"));
+        int bufferSize = Integer.parseInt(parameters.getRequired("buffer"));
+        String evaluationPathString = parameters.get("evaluationPath", "/home/theanhly/Schreibtisch/");
+
         String file = "/home/theanhly/Schreibtisch/amazon_reviews_us_Video_DVD_v1_00.tsv";
         Thread zeroMQDataProviderThread = new Thread(new ZeroMQDataProvider(host, inputPort, file));
         zeroMQDataProviderThread.start();
 
         SparkConf sparkConf = new SparkConf()
-                .setAppName("JavaCustomReceiver")
+                .setAppName("SparkOutput.sce2");
                 //.set("spark.default.parallelism", "1")
                 //.set("spark.executor.instances", "1")
                 //.set("spark.task.cpus", "1")
-                .set("spark.executor.memory","4g")
-                .setMaster("local[*]");
+                //.set("spark.executor.memory","4g")
+                //.setMaster("local[*]");
         JavaStreamingContext ssc = new JavaStreamingContext(sparkConf, new Duration(5000));
 
 
@@ -44,7 +50,7 @@ public class SparkOutput {
                         .build()));
 
         //      Split each line into words
-        JavaDStream<String> words = lines.flatMap(new StringSplitter());
+        JavaDStream<String> words = lines.flatMap(new StringSplitter(evaluationPathString));
 
         //      Count each word in each batch
         JavaPairDStream<String, Integer> pairs = words.mapToPair(new StringMapper());
@@ -56,7 +62,7 @@ public class SparkOutput {
 
         wordCounts.foreachRDD((VoidFunction)DSPConnectorFactory.getInstance().createOutputOperator(new DSPConnectorConfig.Builder(host, outPutPort)
                 .withDSP("spark")
-                .withHWM(20000)
+                .withHWM(bufferSize)
                 .withTimeout(10000)
                 .build()));
 

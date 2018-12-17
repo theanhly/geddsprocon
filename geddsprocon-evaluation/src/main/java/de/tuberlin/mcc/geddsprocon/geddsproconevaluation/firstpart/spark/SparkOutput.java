@@ -4,6 +4,7 @@ import de.tuberlin.mcc.geddsprocon.geddsproconcore.DSPConnectorConfig;
 import de.tuberlin.mcc.geddsprocon.geddsproconcore.DSPConnectorFactory;
 import de.tuberlin.mcc.geddsprocon.geddsproconcore.datastreamprocessorconnectors.SocketPool;
 import de.tuberlin.mcc.geddsprocon.geddsproconevaluation.common.ZeroMQDataProvider;
+import org.apache.flink.api.java.utils.ParameterTool;
 import org.apache.spark.SparkConf;
 import org.apache.spark.api.java.function.Function2;
 import org.apache.spark.api.java.function.VoidFunction;
@@ -17,14 +18,14 @@ import org.apache.spark.streaming.receiver.Receiver;
 public class SparkOutput {
 
     public static void main(String[] args) throws InterruptedException {
-        String host = "192.168.178.191";
+        // Ip of this machine is 192.168.178.191
         int inputPort = 9665;
-        int outPutPort = 9656;
 
-        if(args.length > 1) {
-            host = args[0];
-            outPutPort = Integer.parseInt(args[1]);
-        }
+        ParameterTool parameters = ParameterTool.fromArgs(args);
+        String host = parameters.get("host", "127.0.0.1");
+        int outPutPort = Integer.parseInt(parameters.get("port", "9656"));
+        int bufferSize = Integer.parseInt(parameters.getRequired("buffer"));
+        String evaluationPathString = parameters.get("evaluationPath", "/home/theanhly/Schreibtisch/");
 
         String file = "/home/theanhly/Schreibtisch/amazon_reviews_us_Video_DVD_v1_00.tsv";
         Thread zeroMQDataProviderThread = new Thread(new ZeroMQDataProvider(host, inputPort, file));
@@ -55,13 +56,12 @@ public class SparkOutput {
         //      Count each word in each batch
         JavaPairDStream<String, Integer> pairs = words.mapToPair(new StringMapper());
 
-        //pairs.foreachRDD((VoidFunction)DSPConnectorFactory.getInstance().createOutputOperator(new DSPConnectorConfig.Builder(host, outPutPort)
-        //        .withDSP("spark")
-        //        .withHWM(50000)
-        //        .withTimeout(10000)
-        //        .build()));
+        pairs.foreachRDD((VoidFunction)DSPConnectorFactory.getInstance().createOutputOperator(new DSPConnectorConfig.Builder(host, outPutPort)
+                .withDSP("spark")
+                .withHWM(bufferSize)
+                .withTimeout(10000)
+                .build()));
 
-        pairs.print();
         ssc.start();
         ssc.awaitTermination();
     }

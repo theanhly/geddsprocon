@@ -23,6 +23,7 @@ public class FlinkOutput {
             String host = parameters.get("host", "127.0.0.1");
             int outPutPort = Integer.parseInt(parameters.get("port", "9656"));
             int bufferSize = Integer.parseInt(parameters.getRequired("buffer"));
+            String evaluationPathString = parameters.get("evaluationPath", "/home/theanhly/Schreibtisch/");
 
             String file = "/home/theanhly/Schreibtisch/amazon_reviews_us_Video_DVD_v1_00.tsv";
             Thread zeroMQDataProviderThread = new Thread(new ZeroMQDataProvider(host, inputPort, file));
@@ -35,7 +36,7 @@ public class FlinkOutput {
                             .withSocketType(SocketPool.SocketType.PULL)
                             .withDSP("flink")
                             .build()), TypeInformation.of(String.class))
-                    .flatMap(new StringSplitter());
+                    .flatMap(new StringSplitter(evaluationPathString));
 
             DataStream<Tuple2<String, Integer>> dataStream = wordStream
                     .keyBy("f0")
@@ -45,7 +46,6 @@ public class FlinkOutput {
             dataStream.addSink((SinkFunction)DSPConnectorFactory.getInstance().createOutputOperator(new DSPConnectorConfig.Builder(host, outPutPort)
                     .withDSP("flink")
                     .withHWM(bufferSize)
-                    //.withBufferConnectorString("sendbuffer")
                     .withTimeout(5000)
                     .build()));
 
