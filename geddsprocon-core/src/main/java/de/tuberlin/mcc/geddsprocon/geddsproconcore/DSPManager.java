@@ -111,7 +111,7 @@ public class DSPManager {
             messageBuffer = this.bufferProcessMap.get(messageBufferString);
 
         // initiate the router if the router only if a router with the same host:port hasn't been started yet
-        synchronized (this.getDspManagerLock()) {
+        synchronized (this.getDspRouterLock()) {
             if(!this.dspRouterMap.containsKey(routerAddress)) {
                 DSPRouter router = new DSPRouter(config.getHost(), config.getPort(), outputOp.getBufferFunction(), messageBufferString);
                 // add the manager as a listener to the message buffer
