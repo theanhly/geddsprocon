@@ -28,7 +28,7 @@ import org.apache.flink.util.StringUtils;
 
 /**
  * A tuple with 6 fields. Tuples are strongly typed; each field may be of a separate type.
- * The fields of the tuple can be accessed directly as public fields (f0, f1, ...) or via their position
+ * The fields of the tuple can be accessed directly as public fields (f_0, f_1, ...) or via their position
  * through the {@link #getField(int)} method. The tuple field positions start at zero.
  *
  * <p>Tuples are mutable types, meaning that their fields can be re-assigned. This allows functions that work
@@ -56,17 +56,17 @@ public class Tuple6<T0, T1, T2, T3, T4, T5> extends Tuple {
 	private static final long serialVersionUID = 1L;
 
 	/** Field 0 of the tuple. */
-	public T0 f0;
+	public T0 f_0;
 	/** Field 1 of the tuple. */
-	public T1 f1;
+	public T1 f_1;
 	/** Field 2 of the tuple. */
-	public T2 f2;
+	public T2 f_2;
 	/** Field 3 of the tuple. */
-	public T3 f3;
+	public T3 f_3;
 	/** Field 4 of the tuple. */
-	public T4 f4;
+	public T4 f_4;
 	/** Field 5 of the tuple. */
-	public T5 f5;
+	public T5 f_5;
 
 	/**
 	 * Creates a new tuple where all fields are null.
@@ -84,12 +84,12 @@ public class Tuple6<T0, T1, T2, T3, T4, T5> extends Tuple {
 	 * @param value5 The value for field 5
 	 */
 	public Tuple6(T0 value0, T1 value1, T2 value2, T3 value3, T4 value4, T5 value5) {
-		this.f0 = value0;
-		this.f1 = value1;
-		this.f2 = value2;
-		this.f3 = value3;
-		this.f4 = value4;
-		this.f5 = value5;
+		this.f_0 = value0;
+		this.f_1 = value1;
+		this.f_2 = value2;
+		this.f_3 = value3;
+		this.f_4 = value4;
+		this.f_5 = value5;
 	}
 
 	@Override
@@ -101,12 +101,12 @@ public class Tuple6<T0, T1, T2, T3, T4, T5> extends Tuple {
 	@SuppressWarnings("unchecked")
 	public <T> T getField(int pos) {
 		switch(pos) {
-			case 0: return (T) this.f0;
-			case 1: return (T) this.f1;
-			case 2: return (T) this.f2;
-			case 3: return (T) this.f3;
-			case 4: return (T) this.f4;
-			case 5: return (T) this.f5;
+			case 0: return (T) this.f_0;
+			case 1: return (T) this.f_1;
+			case 2: return (T) this.f_2;
+			case 3: return (T) this.f_3;
+			case 4: return (T) this.f_4;
+			case 5: return (T) this.f_5;
 			default: throw new IndexOutOfBoundsException(String.valueOf(pos));
 		}
 	}
@@ -116,22 +116,22 @@ public class Tuple6<T0, T1, T2, T3, T4, T5> extends Tuple {
 	public <T> void setField(T value, int pos) {
 		switch(pos) {
 			case 0:
-				this.f0 = (T0) value;
+				this.f_0 = (T0) value;
 				break;
 			case 1:
-				this.f1 = (T1) value;
+				this.f_1 = (T1) value;
 				break;
 			case 2:
-				this.f2 = (T2) value;
+				this.f_2 = (T2) value;
 				break;
 			case 3:
-				this.f3 = (T3) value;
+				this.f_3 = (T3) value;
 				break;
 			case 4:
-				this.f4 = (T4) value;
+				this.f_4 = (T4) value;
 				break;
 			case 5:
-				this.f5 = (T5) value;
+				this.f_5 = (T5) value;
 				break;
 			default: throw new IndexOutOfBoundsException(String.valueOf(pos));
 		}
@@ -148,12 +148,12 @@ public class Tuple6<T0, T1, T2, T3, T4, T5> extends Tuple {
 	 * @param value5 The value for field 5
 	 */
 	public void setFields(T0 value0, T1 value1, T2 value2, T3 value3, T4 value4, T5 value5) {
-		this.f0 = value0;
-		this.f1 = value1;
-		this.f2 = value2;
-		this.f3 = value3;
-		this.f4 = value4;
-		this.f5 = value5;
+		this.f_0 = value0;
+		this.f_1 = value1;
+		this.f_2 = value2;
+		this.f_3 = value3;
+		this.f_4 = value4;
+		this.f_5 = value5;
 	}
 
 
@@ -163,18 +163,18 @@ public class Tuple6<T0, T1, T2, T3, T4, T5> extends Tuple {
 
 	/**
 	 * Creates a string representation of the tuple in the form
-	 * (f0, f1, f2, f3, f4, f5),
+	 * (f_0, f_1, f_2, f_3, f_4, f_5),
 	 * where the individual fields are the value returned by calling {@link Object#toString} on that field.
 	 * @return The string representation of the tuple.
 	 */
 	@Override
 	public String toString() {
-		return "(" + StringUtils.arrayAwareToString(this.f0)
-			+ "," + StringUtils.arrayAwareToString(this.f1)
-			+ "," + StringUtils.arrayAwareToString(this.f2)
-			+ "," + StringUtils.arrayAwareToString(this.f3)
-			+ "," + StringUtils.arrayAwareToString(this.f4)
-			+ "," + StringUtils.arrayAwareToString(this.f5)
+		return "(" + StringUtils.arrayAwareToString(this.f_0)
+			+ "," + StringUtils.arrayAwareToString(this.f_1)
+			+ "," + StringUtils.arrayAwareToString(this.f_2)
+			+ "," + StringUtils.arrayAwareToString(this.f_3)
+			+ "," + StringUtils.arrayAwareToString(this.f_4)
+			+ "," + StringUtils.arrayAwareToString(this.f_5)
 			+ ")";
 	}
 
@@ -193,22 +193,22 @@ public class Tuple6<T0, T1, T2, T3, T4, T5> extends Tuple {
 		}
 		@SuppressWarnings("rawtypes")
 		Tuple6 tuple = (Tuple6) o;
-		if (f0 != null ? !f0.equals(tuple.f0) : tuple.f0 != null) {
+		if (f_0 != null ? !f_0.equals(tuple.f_0) : tuple.f_0 != null) {
 			return false;
 		}
-		if (f1 != null ? !f1.equals(tuple.f1) : tuple.f1 != null) {
+		if (f_1 != null ? !f_1.equals(tuple.f_1) : tuple.f_1 != null) {
 			return false;
 		}
-		if (f2 != null ? !f2.equals(tuple.f2) : tuple.f2 != null) {
+		if (f_2 != null ? !f_2.equals(tuple.f_2) : tuple.f_2 != null) {
 			return false;
 		}
-		if (f3 != null ? !f3.equals(tuple.f3) : tuple.f3 != null) {
+		if (f_3 != null ? !f_3.equals(tuple.f_3) : tuple.f_3 != null) {
 			return false;
 		}
-		if (f4 != null ? !f4.equals(tuple.f4) : tuple.f4 != null) {
+		if (f_4 != null ? !f_4.equals(tuple.f_4) : tuple.f_4 != null) {
 			return false;
 		}
-		if (f5 != null ? !f5.equals(tuple.f5) : tuple.f5 != null) {
+		if (f_5 != null ? !f_5.equals(tuple.f_5) : tuple.f_5 != null) {
 			return false;
 		}
 		return true;
@@ -216,12 +216,12 @@ public class Tuple6<T0, T1, T2, T3, T4, T5> extends Tuple {
 
 	@Override
 	public int hashCode() {
-		int result = f0 != null ? f0.hashCode() : 0;
-		result = 31 * result + (f1 != null ? f1.hashCode() : 0);
-		result = 31 * result + (f2 != null ? f2.hashCode() : 0);
-		result = 31 * result + (f3 != null ? f3.hashCode() : 0);
-		result = 31 * result + (f4 != null ? f4.hashCode() : 0);
-		result = 31 * result + (f5 != null ? f5.hashCode() : 0);
+		int result = f_0 != null ? f_0.hashCode() : 0;
+		result = 31 * result + (f_1 != null ? f_1.hashCode() : 0);
+		result = 31 * result + (f_2 != null ? f_2.hashCode() : 0);
+		result = 31 * result + (f_3 != null ? f_3.hashCode() : 0);
+		result = 31 * result + (f_4 != null ? f_4.hashCode() : 0);
+		result = 31 * result + (f_5 != null ? f_5.hashCode() : 0);
 		return result;
 	}
 
@@ -232,12 +232,12 @@ public class Tuple6<T0, T1, T2, T3, T4, T5> extends Tuple {
 	@Override
 	@SuppressWarnings("unchecked")
 	public Tuple6<T0, T1, T2, T3, T4, T5> copy() {
-		return new Tuple6<>(this.f0,
-			this.f1,
-			this.f2,
-			this.f3,
-			this.f4,
-			this.f5);
+		return new Tuple6<>(this.f_0,
+			this.f_1,
+			this.f_2,
+			this.f_3,
+			this.f_4,
+			this.f_5);
 	}
 
 	/**

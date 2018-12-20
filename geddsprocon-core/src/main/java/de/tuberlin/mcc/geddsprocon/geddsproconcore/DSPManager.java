@@ -10,7 +10,6 @@ import de.tuberlin.mcc.geddsprocon.geddsproconcore.tuple.Tuple3;
 
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.HashSet;
 
 public class DSPManager {
 
@@ -61,7 +60,7 @@ public class DSPManager {
 
         for(Tuple3<String, Integer, String> tuple : this.addresses) {
 
-            Thread requesterThread = new Thread(new DSPRequester(tuple.f0, tuple.f1, tuple.f2, messageBuffer));
+            Thread requesterThread = new Thread(new DSPRequester(tuple.f_0, tuple.f_1, tuple.f_2, messageBuffer));
             requesterThread.start();
             this.inputOpRequesterThreadMap.put(inputOp, requesterThread);
         }

@@ -59,10 +59,10 @@ public class TupleTransformerTest {
 
         Assert.assertEquals(resultTuple2.getArity(), 2);
         Assert.assertTrue(resultTuple2 instanceof de.tuberlin.mcc.geddsprocon.geddsproconcore.tuple.Tuple2);
-        Assert.assertTrue(((de.tuberlin.mcc.geddsprocon.geddsproconcore.tuple.Tuple2)resultTuple2).f0 instanceof String);
-        Assert.assertEquals("Hallo Welt", ((de.tuberlin.mcc.geddsprocon.geddsproconcore.tuple.Tuple2)resultTuple2).f0);
-        Assert.assertTrue(((de.tuberlin.mcc.geddsprocon.geddsproconcore.tuple.Tuple2)resultTuple2).f1 instanceof Integer);
-        Assert.assertEquals(2, ((de.tuberlin.mcc.geddsprocon.geddsproconcore.tuple.Tuple2)resultTuple2).f1);
+        Assert.assertTrue(((de.tuberlin.mcc.geddsprocon.geddsproconcore.tuple.Tuple2)resultTuple2).f_0 instanceof String);
+        Assert.assertEquals("Hallo Welt", ((de.tuberlin.mcc.geddsprocon.geddsproconcore.tuple.Tuple2)resultTuple2).f_0);
+        Assert.assertTrue(((de.tuberlin.mcc.geddsprocon.geddsproconcore.tuple.Tuple2)resultTuple2).f_1 instanceof Integer);
+        Assert.assertEquals(2, ((de.tuberlin.mcc.geddsprocon.geddsproconcore.tuple.Tuple2)resultTuple2).f_1);
 
 
         // Tuple10
@@ -72,25 +72,25 @@ public class TupleTransformerTest {
 
         Assert.assertEquals(resultTuple10.getArity(), 10);
         Assert.assertTrue(resultTuple10 instanceof de.tuberlin.mcc.geddsprocon.geddsproconcore.tuple.Tuple10);
-        Assert.assertTrue(((de.tuberlin.mcc.geddsprocon.geddsproconcore.tuple.Tuple10)resultTuple10).f0 instanceof String);
-        Assert.assertEquals("Ich bin Tom Mustermann", ((de.tuberlin.mcc.geddsprocon.geddsproconcore.tuple.Tuple10)resultTuple10).f0);
-        Assert.assertTrue(((de.tuberlin.mcc.geddsprocon.geddsproconcore.tuple.Tuple10)resultTuple10).f1 instanceof Integer);
-        Assert.assertEquals(1337, ((de.tuberlin.mcc.geddsprocon.geddsproconcore.tuple.Tuple10)resultTuple10).f1);
-        Assert.assertTrue(((de.tuberlin.mcc.geddsprocon.geddsproconcore.tuple.Tuple10)resultTuple10).f2 instanceof Double);
-        Assert.assertEquals(2.3332323, ((de.tuberlin.mcc.geddsprocon.geddsproconcore.tuple.Tuple10)resultTuple10).f2);
-        Assert.assertTrue(((de.tuberlin.mcc.geddsprocon.geddsproconcore.tuple.Tuple10)resultTuple10).f3 instanceof Float);
-        Assert.assertEquals(2.11111f, ((de.tuberlin.mcc.geddsprocon.geddsproconcore.tuple.Tuple10)resultTuple10).f3);
-        Assert.assertTrue(((de.tuberlin.mcc.geddsprocon.geddsproconcore.tuple.Tuple10)resultTuple10).f4 instanceof Boolean);
-        Assert.assertTrue((Boolean)((de.tuberlin.mcc.geddsprocon.geddsproconcore.tuple.Tuple10)resultTuple10).f4);
-        Assert.assertTrue(((de.tuberlin.mcc.geddsprocon.geddsproconcore.tuple.Tuple10)resultTuple10).f5 instanceof String);
-        Assert.assertEquals("Test", ((de.tuberlin.mcc.geddsprocon.geddsproconcore.tuple.Tuple10)resultTuple10).f5);
-        Assert.assertTrue(((de.tuberlin.mcc.geddsprocon.geddsproconcore.tuple.Tuple10)resultTuple10).f6 instanceof Character);
-        Assert.assertEquals('T', ((de.tuberlin.mcc.geddsprocon.geddsproconcore.tuple.Tuple10)resultTuple10).f6);
-        Assert.assertTrue(((de.tuberlin.mcc.geddsprocon.geddsproconcore.tuple.Tuple10)resultTuple10).f7 instanceof Long);
-        Assert.assertEquals(21212121212L, ((de.tuberlin.mcc.geddsprocon.geddsproconcore.tuple.Tuple10)resultTuple10).f7);
-        Assert.assertTrue(((de.tuberlin.mcc.geddsprocon.geddsproconcore.tuple.Tuple10)resultTuple10).f8 instanceof String);
-        Assert.assertEquals("TU Berlin", ((de.tuberlin.mcc.geddsprocon.geddsproconcore.tuple.Tuple10)resultTuple10).f8);
-        Assert.assertTrue(((de.tuberlin.mcc.geddsprocon.geddsproconcore.tuple.Tuple10)resultTuple10).f9 instanceof Integer);
-        Assert.assertEquals(42, ((de.tuberlin.mcc.geddsprocon.geddsproconcore.tuple.Tuple10)resultTuple10).f9);
+        Assert.assertTrue(((de.tuberlin.mcc.geddsprocon.geddsproconcore.tuple.Tuple10)resultTuple10).f_0 instanceof String);
+        Assert.assertEquals("Ich bin Tom Mustermann", ((de.tuberlin.mcc.geddsprocon.geddsproconcore.tuple.Tuple10)resultTuple10).f_0);
+        Assert.assertTrue(((de.tuberlin.mcc.geddsprocon.geddsproconcore.tuple.Tuple10)resultTuple10).f_1 instanceof Integer);
+        Assert.assertEquals(1337, ((de.tuberlin.mcc.geddsprocon.geddsproconcore.tuple.Tuple10)resultTuple10).f_1);
+        Assert.assertTrue(((de.tuberlin.mcc.geddsprocon.geddsproconcore.tuple.Tuple10)resultTuple10).f_2 instanceof Double);
+        Assert.assertEquals(2.3332323, ((de.tuberlin.mcc.geddsprocon.geddsproconcore.tuple.Tuple10)resultTuple10).f_2);
+        Assert.assertTrue(((de.tuberlin.mcc.geddsprocon.geddsproconcore.tuple.Tuple10)resultTuple10).f_3 instanceof Float);
+        Assert.assertEquals(2.11111f, ((de.tuberlin.mcc.geddsprocon.geddsproconcore.tuple.Tuple10)resultTuple10).f_3);
+        Assert.assertTrue(((de.tuberlin.mcc.geddsprocon.geddsproconcore.tuple.Tuple10)resultTuple10).f_4 instanceof Boolean);
+        Assert.assertTrue((Boolean)((de.tuberlin.mcc.geddsprocon.geddsproconcore.tuple.Tuple10)resultTuple10).f_4);
+        Assert.assertTrue(((de.tuberlin.mcc.geddsprocon.geddsproconcore.tuple.Tuple10)resultTuple10).f_5 instanceof String);
+        Assert.assertEquals("Test", ((de.tuberlin.mcc.geddsprocon.geddsproconcore.tuple.Tuple10)resultTuple10).f_5);
+        Assert.assertTrue(((de.tuberlin.mcc.geddsprocon.geddsproconcore.tuple.Tuple10)resultTuple10).f_6 instanceof Character);
+        Assert.assertEquals('T', ((de.tuberlin.mcc.geddsprocon.geddsproconcore.tuple.Tuple10)resultTuple10).f_6);
+        Assert.assertTrue(((de.tuberlin.mcc.geddsprocon.geddsproconcore.tuple.Tuple10)resultTuple10).f_7 instanceof Long);
+        Assert.assertEquals(21212121212L, ((de.tuberlin.mcc.geddsprocon.geddsproconcore.tuple.Tuple10)resultTuple10).f_7);
+        Assert.assertTrue(((de.tuberlin.mcc.geddsprocon.geddsproconcore.tuple.Tuple10)resultTuple10).f_8 instanceof String);
+        Assert.assertEquals("TU Berlin", ((de.tuberlin.mcc.geddsprocon.geddsproconcore.tuple.Tuple10)resultTuple10).f_8);
+        Assert.assertTrue(((de.tuberlin.mcc.geddsprocon.geddsproconcore.tuple.Tuple10)resultTuple10).f_9 instanceof Integer);
+        Assert.assertEquals(42, ((de.tuberlin.mcc.geddsprocon.geddsproconcore.tuple.Tuple10)resultTuple10).f_9);
     }
 }

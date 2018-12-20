@@ -28,7 +28,7 @@ import org.apache.flink.util.StringUtils;
 
 /**
  * A tuple with 1 fields. Tuples are strongly typed; each field may be of a separate type.
- * The fields of the tuple can be accessed directly as public fields (f0, f1, ...) or via their position
+ * The fields of the tuple can be accessed directly as public fields (f_0, f_1, ...) or via their position
  * through the {@link #getField(int)} method. The tuple field positions start at zero.
  *
  * <p>Tuples are mutable types, meaning that their fields can be re-assigned. This allows functions that work
@@ -51,7 +51,7 @@ public class Tuple1<T0> extends Tuple {
 	private static final long serialVersionUID = 1L;
 
 	/** Field 0 of the tuple. */
-	public T0 f0;
+	public T0 f_0;
 
 	/**
 	 * Creates a new tuple where all fields are null.
@@ -64,7 +64,7 @@ public class Tuple1<T0> extends Tuple {
 	 * @param value0 The value for field 0
 	 */
 	public Tuple1(T0 value0) {
-		this.f0 = value0;
+		this.f_0 = value0;
 	}
 
 	@Override
@@ -76,7 +76,7 @@ public class Tuple1<T0> extends Tuple {
 	@SuppressWarnings("unchecked")
 	public <T> T getField(int pos) {
 		switch(pos) {
-			case 0: return (T) this.f0;
+			case 0: return (T) this.f_0;
 			default: throw new IndexOutOfBoundsException(String.valueOf(pos));
 		}
 	}
@@ -86,7 +86,7 @@ public class Tuple1<T0> extends Tuple {
 	public <T> void setField(T value, int pos) {
 		switch(pos) {
 			case 0:
-				this.f0 = (T0) value;
+				this.f_0 = (T0) value;
 				break;
 			default: throw new IndexOutOfBoundsException(String.valueOf(pos));
 		}
@@ -98,7 +98,7 @@ public class Tuple1<T0> extends Tuple {
 	 * @param value0 The value for field 0
 	 */
 	public void setFields(T0 value0) {
-		this.f0 = value0;
+		this.f_0 = value0;
 	}
 
 
@@ -108,13 +108,13 @@ public class Tuple1<T0> extends Tuple {
 
 	/**
 	 * Creates a string representation of the tuple in the form
-	 * (f0),
+	 * (f_0),
 	 * where the individual fields are the value returned by calling {@link Object#toString} on that field.
 	 * @return The string representation of the tuple.
 	 */
 	@Override
 	public String toString() {
-		return "(" + StringUtils.arrayAwareToString(this.f0)
+		return "(" + StringUtils.arrayAwareToString(this.f_0)
 			+ ")";
 	}
 
@@ -133,7 +133,7 @@ public class Tuple1<T0> extends Tuple {
 		}
 		@SuppressWarnings("rawtypes")
 		Tuple1 tuple = (Tuple1) o;
-		if (f0 != null ? !f0.equals(tuple.f0) : tuple.f0 != null) {
+		if (f_0 != null ? !f_0.equals(tuple.f_0) : tuple.f_0 != null) {
 			return false;
 		}
 		return true;
@@ -141,7 +141,7 @@ public class Tuple1<T0> extends Tuple {
 
 	@Override
 	public int hashCode() {
-		int result = f0 != null ? f0.hashCode() : 0;
+		int result = f_0 != null ? f_0.hashCode() : 0;
 		return result;
 	}
 
@@ -152,7 +152,7 @@ public class Tuple1<T0> extends Tuple {
 	@Override
 	@SuppressWarnings("unchecked")
 	public Tuple1<T0> copy() {
-		return new Tuple1<>(this.f0);
+		return new Tuple1<>(this.f_0);
 	}
 
 	/**

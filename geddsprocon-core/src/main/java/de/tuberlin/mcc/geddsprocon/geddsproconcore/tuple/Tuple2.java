@@ -28,7 +28,7 @@ import org.apache.flink.util.StringUtils;
 
 /**
  * A tuple with 2 fields. Tuples are strongly typed; each field may be of a separate type.
- * The fields of the tuple can be accessed directly as public fields (f0, f1, ...) or via their position
+ * The fields of the tuple can be accessed directly as public fields (f_0, f_1, ...) or via their position
  * through the {@link #getField(int)} method. The tuple field positions start at zero.
  *
  * <p>Tuples are mutable types, meaning that their fields can be re-assigned. This allows functions that work
@@ -52,9 +52,9 @@ public class Tuple2<T0, T1> extends Tuple {
 	private static final long serialVersionUID = 1L;
 
 	/** Field 0 of the tuple. */
-	public T0 f0;
+	public T0 f_0;
 	/** Field 1 of the tuple. */
-	public T1 f1;
+	public T1 f_1;
 
 	/**
 	 * Creates a new tuple where all fields are null.
@@ -68,8 +68,8 @@ public class Tuple2<T0, T1> extends Tuple {
 	 * @param value1 The value for field 1
 	 */
 	public Tuple2(T0 value0, T1 value1) {
-		this.f0 = value0;
-		this.f1 = value1;
+		this.f_0 = value0;
+		this.f_1 = value1;
 	}
 
 	@Override
@@ -81,8 +81,8 @@ public class Tuple2<T0, T1> extends Tuple {
 	@SuppressWarnings("unchecked")
 	public <T> T getField(int pos) {
 		switch(pos) {
-			case 0: return (T) this.f0;
-			case 1: return (T) this.f1;
+			case 0: return (T) this.f_0;
+			case 1: return (T) this.f_1;
 			default: throw new IndexOutOfBoundsException(String.valueOf(pos));
 		}
 	}
@@ -92,10 +92,10 @@ public class Tuple2<T0, T1> extends Tuple {
 	public <T> void setField(T value, int pos) {
 		switch(pos) {
 			case 0:
-				this.f0 = (T0) value;
+				this.f_0 = (T0) value;
 				break;
 			case 1:
-				this.f1 = (T1) value;
+				this.f_1 = (T1) value;
 				break;
 			default: throw new IndexOutOfBoundsException(String.valueOf(pos));
 		}
@@ -108,8 +108,8 @@ public class Tuple2<T0, T1> extends Tuple {
 	 * @param value1 The value for field 1
 	 */
 	public void setFields(T0 value0, T1 value1) {
-		this.f0 = value0;
-		this.f1 = value1;
+		this.f_0 = value0;
+		this.f_1 = value1;
 	}
 
 	/**
@@ -118,7 +118,7 @@ public class Tuple2<T0, T1> extends Tuple {
 	* @return shallow copy of the tuple with swapped values
 	*/
 	public Tuple2<T1, T0> swap() {
-		return new Tuple2<T1, T0>(f1, f0);
+		return new Tuple2<T1, T0>(f_1, f_0);
 	}
 
 	// -------------------------------------------------------------------------------------------------
@@ -127,14 +127,14 @@ public class Tuple2<T0, T1> extends Tuple {
 
 	/**
 	 * Creates a string representation of the tuple in the form
-	 * (f0, f1),
+	 * (f_0, f_1),
 	 * where the individual fields are the value returned by calling {@link Object#toString} on that field.
 	 * @return The string representation of the tuple.
 	 */
 	@Override
 	public String toString() {
-		return "(" + StringUtils.arrayAwareToString(this.f0)
-			+ "," + StringUtils.arrayAwareToString(this.f1)
+		return "(" + StringUtils.arrayAwareToString(this.f_0)
+			+ "," + StringUtils.arrayAwareToString(this.f_1)
 			+ ")";
 	}
 
@@ -153,10 +153,10 @@ public class Tuple2<T0, T1> extends Tuple {
 		}
 		@SuppressWarnings("rawtypes")
 		Tuple2 tuple = (Tuple2) o;
-		if (f0 != null ? !f0.equals(tuple.f0) : tuple.f0 != null) {
+		if (f_0 != null ? !f_0.equals(tuple.f_0) : tuple.f_0 != null) {
 			return false;
 		}
-		if (f1 != null ? !f1.equals(tuple.f1) : tuple.f1 != null) {
+		if (f_1 != null ? !f_1.equals(tuple.f_1) : tuple.f_1 != null) {
 			return false;
 		}
 		return true;
@@ -164,8 +164,8 @@ public class Tuple2<T0, T1> extends Tuple {
 
 	@Override
 	public int hashCode() {
-		int result = f0 != null ? f0.hashCode() : 0;
-		result = 31 * result + (f1 != null ? f1.hashCode() : 0);
+		int result = f_0 != null ? f_0.hashCode() : 0;
+		result = 31 * result + (f_1 != null ? f_1.hashCode() : 0);
 		return result;
 	}
 
@@ -176,8 +176,8 @@ public class Tuple2<T0, T1> extends Tuple {
 	@Override
 	@SuppressWarnings("unchecked")
 	public Tuple2<T0, T1> copy() {
-		return new Tuple2<>(this.f0,
-			this.f1);
+		return new Tuple2<>(this.f_0,
+			this.f_1);
 	}
 
 	/**
