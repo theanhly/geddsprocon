@@ -37,7 +37,7 @@ public class SparkOutput {
                 //.set("spark.task.cpus", "1")
                 //.set("spark.streaming.backpressure.enabled", "true")
                 //.set("spark.executor.memory","4g")
-                .setMaster("local[*]")
+                //.setMaster("local[*]")
                 .setAppName("SparkOutput");
         JavaStreamingContext ssc = new JavaStreamingContext(sparkConf, new Duration(5000));
 
