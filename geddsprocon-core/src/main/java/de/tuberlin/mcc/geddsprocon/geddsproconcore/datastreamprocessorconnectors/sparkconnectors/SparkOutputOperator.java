@@ -33,22 +33,23 @@ public class SparkOutputOperator<T extends JavaRDDLike> implements IDSPOutputOpe
             }
 
             if(init) {
-                for(Object rdd : value.collect()) {
-                    if(rdd instanceof Serializable) {
-                        if(rdd instanceof scala.Product && this.transform)
-                            rdd = TupleTransformer.transformToIntermediateTuple((scala.Product)rdd);
+                value.foreach(record ->  {
+                    if (record instanceof Serializable) {
+                        if (record instanceof scala.Product && this.transform)
+                            record = TupleTransformer.transformToIntermediateTuple((scala.Product) record);
 
-                        byte[] byteMessage = SerializationTool.serialize((Serializable)rdd);
+                        byte[] byteMessage = SerializationTool.serialize((Serializable) record);
 
                         // block while the buffer is full
                         //while(DSPManager.getInstance().getBuffer(this.messageBufferConnectionString).isFull()) {}
-                        while(DSPManager.getInstance().getBuffer(this.messageBufferConnectionString).isFull()) {}
+                        while (DSPManager.getInstance().getBuffer(this.messageBufferConnectionString).isFull()) {
+                        }
 
                         //DSPManager.getInstance().getBuffer(this.messageBufferConnectionString).writeBuffer(byteMessage);
                         DSPManager.getInstance().getBuffer(this.messageBufferConnectionString).writeBuffer(byteMessage);
                         //System.out.println("Written to buffer");
                     }
-                }
+                });
             }
         }
     }
