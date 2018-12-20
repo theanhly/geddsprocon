@@ -15,7 +15,7 @@ public class StringSplitter implements FlatMapFunction<String, String> {
     private String evaluationPathString;
 
     public StringSplitter()  {
-        this("/home/theanhly/Schreibtisch/");
+        this("/home/hadoop/thesis-evaluation/");
     }
 
     public StringSplitter (String evaluationPathString) {

@@ -20,28 +20,27 @@ public class FlinkOutput {
             int inputPort = 9665;
 
             ParameterTool parameters = ParameterTool.fromArgs(args);
-            String host = parameters.get("host", "127.0.0.1");
+            String host = parameters.get("host", "0.0.0.0");
             int outPutPort = Integer.parseInt(parameters.get("port", "9656"));
             int bufferSize = Integer.parseInt(parameters.getRequired("buffer"));
-            String evaluationPathString = parameters.get("evaluationPath", "/home/theanhly/Schreibtisch/");
+            String evaluationPathString = parameters.get("evaluationPath", "/home/hadoop/thesis-evaluation/");
 
-            String file = "/home/theanhly/Schreibtisch/amazon_reviews_us_Video_DVD_v1_00.tsv";
+            String file = "/home/hadoop/thesis-evaluation/amazon_reviews_us_Video_DVD_v1_00.tsv";
             Thread zeroMQDataProviderThread = new Thread(new ZeroMQDataProvider(host, inputPort, file));
             zeroMQDataProviderThread.start();
 
             StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
 
             DataStream<Tuple2<String, Integer>> wordStream = env
-                    .addSource((SourceFunction)DSPConnectorFactory.getInstance().createInputOperator(new DSPConnectorConfig.Builder(host, inputPort)
+                    .addSource((SourceFunction)DSPConnectorFactory.getInstance().createInputOperator(new DSPConnectorConfig.Builder("0.0.0.0", inputPort)
                             .withSocketType(SocketPool.SocketType.PULL)
                             .withDSP("flink")
                             .build()), TypeInformation.of(String.class))
                     .flatMap(new StringSplitter(evaluationPathString));
 
-            wordStream.addSink((SinkFunction)DSPConnectorFactory.getInstance().createOutputOperator(new DSPConnectorConfig.Builder(host, outPutPort)
+            wordStream.addSink((SinkFunction)DSPConnectorFactory.getInstance().createOutputOperator(new DSPConnectorConfig.Builder("0.0.0.0", outPutPort)
                     .withDSP("flink")
                     .withHWM(bufferSize)
-                    //.withBufferConnectorString("sendbuffer")
                     .withTimeout(5000)
                     .build()));
 

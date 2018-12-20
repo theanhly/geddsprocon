@@ -15,7 +15,7 @@ public class FlinkInput {
     public static void main(String[] args) {
         try{
             ParameterTool parameters = ParameterTool.fromArgs(args);
-            String host = parameters.get("host", "127.0.0.1");
+            String host = parameters.get("host", "0.0.0.0");
             int inputPort = Integer.parseInt(parameters.get("port", "9656"));
             int bufferSize = Integer.parseInt(parameters.getRequired("buffer"));
 
