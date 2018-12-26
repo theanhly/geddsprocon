@@ -171,11 +171,6 @@ public class DSPRouter implements Runnable, IMessageBufferListener {
             reply();
     }
 
-    @Override
-    public void bufferClearedEvent() {
-        // Nothing to do if the buffer has been cleared
-    }
-
     public void stop() {
         System.err.println("Stopping router,,,");
         this.isRunning = false;
