@@ -2,6 +2,7 @@ package de.tuberlin.mcc.geddsprocon.geddsproconcore.datastreamprocessorconnector
 
 
 import de.tuberlin.mcc.geddsprocon.geddsproconcore.DSPConnectorConfig;
+import de.tuberlin.mcc.geddsprocon.geddsproconcore.SocketPool;
 import org.junit.Assert;
 import org.junit.Test;
 import org.zeromq.ZMQ;

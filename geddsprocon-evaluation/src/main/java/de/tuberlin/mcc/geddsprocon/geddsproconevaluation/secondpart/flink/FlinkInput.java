@@ -1,4 +1,4 @@
-package de.tuberlin.mcc.geddsprocon.geddsproconevaluation.firstpart.flink;
+package de.tuberlin.mcc.geddsprocon.geddsproconevaluation.secondpart.flink;
 
 import de.tuberlin.mcc.geddsprocon.geddsproconcore.DSPConnectorConfig;
 import de.tuberlin.mcc.geddsprocon.geddsproconcore.DSPConnectorFactory;
@@ -26,10 +26,12 @@ public class FlinkInput {
                             .withDSP("flink")
                             .withHWM(bufferSize)
                             .withTimeout(15000)
+                            //.withBufferConnectorString("recvbuffer")
                             .withRequestAddress(host, inputPort, DSPConnectorFactory.ConnectorType.PRIMARY)
                             .build()), TypeInfoParser.parse("Tuple2<String,Integer>"))
+                    //.flatMap(new TupleMapper())
                     .keyBy("f0")
-                    .timeWindow(Time.seconds(5))
+                    .timeWindow(Time.seconds(30))
                     .sum("f1");
 
             dataStream.print();

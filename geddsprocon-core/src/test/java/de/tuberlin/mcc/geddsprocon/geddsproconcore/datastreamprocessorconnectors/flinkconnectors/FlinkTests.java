@@ -5,7 +5,7 @@ import de.tuberlin.mcc.geddsprocon.geddsproconcore.DSPConnectorFactory;
 
 import de.tuberlin.mcc.geddsprocon.geddsproconcore.DSPConnectorConfig;
 import de.tuberlin.mcc.geddsprocon.geddsproconcore.common.SerializationTool;
-import de.tuberlin.mcc.geddsprocon.geddsproconcore.datastreamprocessorconnectors.SocketPool;
+import de.tuberlin.mcc.geddsprocon.geddsproconcore.SocketPool;
 import org.apache.flink.api.common.restartstrategy.RestartStrategies;
 import org.apache.flink.api.java.tuple.*;
 import org.apache.flink.api.common.functions.FlatMapFunction;
@@ -17,13 +17,8 @@ import org.apache.flink.streaming.api.functions.sink.SinkFunction;
 import org.apache.flink.streaming.api.functions.source.SourceFunction;
 import org.apache.flink.streaming.api.windowing.time.Time;
 import org.apache.flink.util.Collector;
-import org.junit.Assert;
 import org.junit.Test;
 import org.zeromq.ZMQ;
-
-import java.io.BufferedWriter;
-import java.io.FileWriter;
-import java.time.LocalDateTime;
 
 /**
  * (SINK) --sends_to--> (SOURCE)

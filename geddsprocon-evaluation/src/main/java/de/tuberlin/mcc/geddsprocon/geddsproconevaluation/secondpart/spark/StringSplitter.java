@@ -1,7 +1,6 @@
-package de.tuberlin.mcc.geddsprocon.geddsproconevaluation.firstpart.spark;
+package de.tuberlin.mcc.geddsprocon.geddsproconevaluation.secondpart.spark;
 
 import org.apache.spark.api.java.function.FlatMapFunction;
-import scala.Tuple2;
 
 import java.io.BufferedWriter;
 import java.io.FileWriter;
@@ -28,7 +27,7 @@ public class StringSplitter implements FlatMapFunction<String, String> {
 
         this.lines++;
         if(stringArr.length == 1 && (stringArr[0].equals("START_DATA") || stringArr[0].equals("END_DATA"))) {
-            BufferedWriter writer = new BufferedWriter(new FileWriter(this.evaluationPathString + "evaluation-spark.log", true));
+            BufferedWriter writer = new BufferedWriter(new FileWriter(evaluationPathString + "evaluation-spark.log", true));
             if(stringArr[0].equals("START_DATA"))
                 writer.append("===============START SPARK===============\n");
 

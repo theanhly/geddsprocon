@@ -1,6 +1,7 @@
 package de.tuberlin.mcc.geddsprocon.geddsproconcore.datastreamprocessorconnectors.sparkconnectors;
 
 import com.google.common.base.Strings;
+import com.typesafe.config.ConfigException;
 import de.tuberlin.mcc.geddsprocon.geddsproconcore.DSPConnectorConfig;
 import de.tuberlin.mcc.geddsprocon.geddsproconcore.DSPManager;
 import de.tuberlin.mcc.geddsprocon.geddsproconcore.common.SerializationTool;
@@ -27,29 +28,39 @@ public class SparkOutputOperator<T extends JavaRDDLike> implements IDSPOutputOpe
     @Override
     public void call(T value) throws Exception {
         synchronized (DSPManager.getInstance().getDspManagerLock()) {
-            if(!init) {
+           /* if(!init) {
                 DSPManager.getInstance().initiateOutputOperator(this.config, this);
                 this.init = true;
-            }
+                System.out.println("Init Spark output before: " + java.lang.management.ManagementFactory.getRuntimeMXBean().getName());
+            }*/
 
-            if(init) {
-                for(Object rdd : value.collect()) {
-                    if(rdd instanceof Serializable) {
-                        if(rdd instanceof scala.Product && this.transform)
-                            rdd = TupleTransformer.transformToIntermediateTuple((scala.Product)rdd);
+            value.foreach(record ->  {
+                //System.out.println("Inside foreach " + java.lang.management.ManagementFactory.getRuntimeMXBean().getName());
 
-                        byte[] byteMessage = SerializationTool.serialize((Serializable)rdd);
+                if(!this.init) {
+                    System.out.println("Init Spark output " + java.lang.management.ManagementFactory.getRuntimeMXBean().getName());
+                    DSPManager.getInstance().initiateOutputOperator(this.config, this);
+                    this.init = true;
+                }
+
+                if(this.init) {
+                    if (record != null && record instanceof Serializable) {
+                        if (record instanceof scala.Product && this.transform)
+                            record = TupleTransformer.transformToIntermediateTuple((scala.Product) record);
+
+                        byte[] byteMessage = SerializationTool.serialize((Serializable) record);
 
                         // block while the buffer is full
                         //while(DSPManager.getInstance().getBuffer(this.messageBufferConnectionString).isFull()) {}
-                        while(DSPManager.getInstance().getBuffer(this.messageBufferConnectionString).isFull()) {}
+                        while (DSPManager.getInstance().getBuffer(this.messageBufferConnectionString).isFull()) {
+                        }
 
                         //DSPManager.getInstance().getBuffer(this.messageBufferConnectionString).writeBuffer(byteMessage);
                         DSPManager.getInstance().getBuffer(this.messageBufferConnectionString).writeBuffer(byteMessage);
                         //System.out.println("Written to buffer");
                     }
                 }
-            }
+            });
         }
     }
 

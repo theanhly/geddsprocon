@@ -1,7 +1,6 @@
 package de.tuberlin.mcc.geddsprocon.geddsproconcore;
 
 import com.google.common.base.Strings;
-import de.tuberlin.mcc.geddsprocon.geddsproconcore.datastreamprocessorconnectors.SocketPool;
 import de.tuberlin.mcc.geddsprocon.geddsproconcore.messagebuffer.MessageBuffer;
 import org.zeromq.ZFrame;
 import org.zeromq.ZMQ;

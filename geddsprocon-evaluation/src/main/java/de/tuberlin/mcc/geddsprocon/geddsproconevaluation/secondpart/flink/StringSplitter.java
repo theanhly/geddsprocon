@@ -1,4 +1,4 @@
-package de.tuberlin.mcc.geddsprocon.geddsproconevaluation.firstpart.flink;
+package de.tuberlin.mcc.geddsprocon.geddsproconevaluation.secondpart.flink;
 
 import org.apache.flink.api.common.functions.FlatMapFunction;
 import org.apache.flink.api.java.tuple.Tuple2;
@@ -26,7 +26,7 @@ public class StringSplitter implements FlatMapFunction<String, Tuple2<String, In
         this.lines++;
         for (String word: sentence.split(" ")) {
             if(word.equals("START_DATA") || word.equals("END_DATA")) {
-                BufferedWriter writer = new BufferedWriter(new FileWriter(this.evaluationPathString + "evaluation.log", true));
+                BufferedWriter writer = new BufferedWriter(new FileWriter(evaluationPathString + "evaluation.log", true));
                 if(word.equals("START_DATA"))
                     writer.append("===============START===============\n");
 

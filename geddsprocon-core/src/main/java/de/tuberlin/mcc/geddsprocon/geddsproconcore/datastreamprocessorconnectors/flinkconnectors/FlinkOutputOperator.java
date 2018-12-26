@@ -5,21 +5,18 @@ import de.tuberlin.mcc.geddsprocon.geddsproconcore.DSPConnectorConfig;
 import de.tuberlin.mcc.geddsprocon.geddsproconcore.DSPManager;
 import de.tuberlin.mcc.geddsprocon.geddsproconcore.common.SerializationTool;
 import de.tuberlin.mcc.geddsprocon.geddsproconcore.datastreamprocessorconnectors.IDSPOutputOperator;
-import de.tuberlin.mcc.geddsprocon.geddsproconcore.datastreamprocessorconnectors.SocketPool;
+import de.tuberlin.mcc.geddsprocon.geddsproconcore.SocketPool;
 import de.tuberlin.mcc.geddsprocon.geddsproconcore.messagebuffer.IMessageBufferFunction;
 import de.tuberlin.mcc.geddsprocon.geddsproconcore.messagebuffer.IMessageBufferListener;
 import org.apache.flink.api.java.tuple.Tuple;
 import org.apache.flink.configuration.Configuration;
-import org.apache.flink.streaming.api.checkpoint.ListCheckpointed;
 import org.apache.flink.streaming.api.functions.sink.RichSinkFunction;
-import org.zeromq.ZFrame;
 import org.zeromq.ZMsg;
 
 import java.io.Serializable;
 import java.util.LinkedList;
-import java.util.List;
 
-public class FlinkOutputOperator extends RichSinkFunction<Serializable> implements IDSPOutputOperator, IMessageBufferFunction, IMessageBufferListener/*, ListCheckpointed<byte[]> */{
+public class FlinkOutputOperator extends RichSinkFunction<Serializable> implements IDSPOutputOperator, IMessageBufferFunction {
     private boolean transform;
     private volatile boolean isRunning = true;
     private final DSPConnectorConfig config;
@@ -98,8 +95,8 @@ public class FlinkOutputOperator extends RichSinkFunction<Serializable> implemen
     @Override
     public void close() {
         this.isRunning = false;
-        SocketPool.getInstance().stopSockets(this.config);
         DSPManager.getInstance().stopRouter(this.config);
+        SocketPool.getInstance().stopSockets(this.config);
     }
 
     @Override
@@ -110,44 +107,5 @@ public class FlinkOutputOperator extends RichSinkFunction<Serializable> implemen
     @Override
     public ZMsg flush(ZMsg message) {
         return message;
-    }
-
-    /*@Override
-    public List<byte[]> snapshotState(long checkpointId, long timestamp) throws Exception {
-        ZMsg zmsg = DSPManager.getInstance().getBuffer(this.messageBufferConnectionString).flushBuffer(this, false);
-        List<byte[]> list = new LinkedList<>();
-        for(ZFrame frame : zmsg) {
-            System.out.println("snapshotState..... save frame: " + frame.toString());
-            list.add(frame.getData());
-        }
-
-        return list;
-    }*/
-
-    /*@Override
-    public void restoreState(List<byte[]> state) throws Exception {
-        for(byte[] bytes : state) {
-            // block while the buffer is full
-            while(DSPManager.getInstance().getBuffer(this.messageBufferConnectionString).isFull()) {}
-
-            System.out.println("restoreState.... writing bytes to buffer");
-            DSPManager.getInstance().getBuffer(this.messageBufferConnectionString).writeBuffer(bytes);
-        }
-    }*/
-
-    @Override
-    public void bufferIsFullEvent() {
-        // Do nothing if the buffer is full.
-    }
-
-    /**
-     * If the buffer is cleared, then backup the buffer and start a new buffer. Delete the
-     */
-    @Override
-    public void bufferClearedEvent() {
-        synchronized (this) {
-            //this.previousOutputBuffer = this.outputBuffer;
-            //this.outputBuffer = new LinkedList();
-        }
     }
 }

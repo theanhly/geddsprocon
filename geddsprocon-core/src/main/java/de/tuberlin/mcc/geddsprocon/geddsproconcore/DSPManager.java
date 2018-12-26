@@ -3,14 +3,12 @@ package de.tuberlin.mcc.geddsprocon.geddsproconcore;
 import com.google.common.base.Strings;
 import de.tuberlin.mcc.geddsprocon.geddsproconcore.datastreamprocessorconnectors.IDSPInputOperator;
 import de.tuberlin.mcc.geddsprocon.geddsproconcore.datastreamprocessorconnectors.IDSPOutputOperator;
-import de.tuberlin.mcc.geddsprocon.geddsproconcore.datastreamprocessorconnectors.SocketPool;
 import de.tuberlin.mcc.geddsprocon.geddsproconcore.messagebuffer.IMessageBufferListener;
 import de.tuberlin.mcc.geddsprocon.geddsproconcore.messagebuffer.MessageBuffer;
 import de.tuberlin.mcc.geddsprocon.geddsproconcore.tuple.Tuple3;
 
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.HashSet;
 
 public class DSPManager {
 
@@ -61,7 +59,7 @@ public class DSPManager {
 
         for(Tuple3<String, Integer, String> tuple : this.addresses) {
 
-            Thread requesterThread = new Thread(new DSPRequester(tuple.f0, tuple.f1, tuple.f2, messageBuffer));
+            Thread requesterThread = new Thread(new DSPRequester(tuple.f_0, tuple.f_1, tuple.f_2, messageBuffer));
             requesterThread.start();
             this.inputOpRequesterThreadMap.put(inputOp, requesterThread);
         }
@@ -111,7 +109,7 @@ public class DSPManager {
             messageBuffer = this.bufferProcessMap.get(messageBufferString);
 
         // initiate the router if the router only if a router with the same host:port hasn't been started yet
-        synchronized (this.getDspManagerLock()) {
+        synchronized (this.getDspRouterLock()) {
             if(!this.dspRouterMap.containsKey(routerAddress)) {
                 DSPRouter router = new DSPRouter(config.getHost(), config.getPort(), outputOp.getBufferFunction(), messageBufferString);
                 // add the manager as a listener to the message buffer
@@ -131,8 +129,13 @@ public class DSPManager {
 
         synchronized (this.getDspManagerLock()) {
             if(this.inputOpRequesterThreadMap.containsKey(inputOperator)) {
-                Thread routerThread = this.inputOpRequesterThreadMap.get(inputOperator);
-                routerThread.interrupt();
+                Thread requesterThread = this.inputOpRequesterThreadMap.get(inputOperator);
+                requesterThread.interrupt();
+                try {
+                    requesterThread.join();
+                } catch(InterruptedException ex) {
+                    System.out.println("Requester thread interrupted.");
+                }
                 this.inputOpRequesterThreadMap.remove(inputOperator);
             }
         }
@@ -143,8 +146,13 @@ public class DSPManager {
 
         synchronized (this.getDspManagerLock()) {
             if(this.dspRouterMap.containsKey(routerAddress)) {
-                Runnable routerThread = this.dspRouterMap.get(routerAddress);
-                ((Thread) routerThread).interrupt();
+                Thread routerThread = this.dspRouterMap.get(routerAddress);
+                routerThread.interrupt();
+                try {
+                    routerThread.join();
+                } catch(InterruptedException ex) {
+                    System.out.println("Router thread interrupted.");
+                }
                 this.dspRouterMap.remove(routerAddress);
             }
         }

@@ -5,11 +5,10 @@ import de.tuberlin.mcc.geddsprocon.geddsproconcore.DSPConnectorConfig;
 import de.tuberlin.mcc.geddsprocon.geddsproconcore.DSPManager;
 import de.tuberlin.mcc.geddsprocon.geddsproconcore.common.SerializationTool;
 import de.tuberlin.mcc.geddsprocon.geddsproconcore.datastreamprocessorconnectors.IDSPInputOperator;
-import de.tuberlin.mcc.geddsprocon.geddsproconcore.datastreamprocessorconnectors.SocketPool;
+import de.tuberlin.mcc.geddsprocon.geddsproconcore.SocketPool;
 import de.tuberlin.mcc.geddsprocon.geddsproconcore.messagebuffer.IMessageBufferFunction;
 import org.apache.flink.configuration.Configuration;
 import org.apache.flink.streaming.api.functions.source.RichParallelSourceFunction;
-import org.apache.flink.streaming.api.functions.source.SourceFunction;
 import org.zeromq.ZFrame;
 import org.zeromq.ZMsg;
 
@@ -87,8 +86,8 @@ public class FlinkInputOperator extends RichParallelSourceFunction<Serializable>
         this.isRunning = false;
 
         try {
-            SocketPool.getInstance().stopSocket(this.host, this.port);
             DSPManager.getInstance().stopRequester(this);
+            SocketPool.getInstance().stopSocket(this.host, this.port);
         } catch (IllegalArgumentException  ex) {
             System.err.println(ex.toString());
         }

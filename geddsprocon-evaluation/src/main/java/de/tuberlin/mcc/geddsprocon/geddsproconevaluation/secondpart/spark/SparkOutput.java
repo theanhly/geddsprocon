@@ -1,4 +1,4 @@
-package de.tuberlin.mcc.geddsprocon.geddsproconevaluation.firstpart.spark;
+package de.tuberlin.mcc.geddsprocon.geddsproconevaluation.secondpart.spark;
 
 import de.tuberlin.mcc.geddsprocon.geddsproconcore.DSPConnectorConfig;
 import de.tuberlin.mcc.geddsprocon.geddsproconcore.DSPConnectorFactory;
@@ -6,6 +6,7 @@ import de.tuberlin.mcc.geddsprocon.geddsproconcore.SocketPool;
 import de.tuberlin.mcc.geddsprocon.geddsproconevaluation.common.ZeroMQDataProvider;
 import org.apache.flink.api.java.utils.ParameterTool;
 import org.apache.spark.SparkConf;
+import org.apache.spark.api.java.function.Function2;
 import org.apache.spark.api.java.function.VoidFunction;
 import org.apache.spark.streaming.Duration;
 import org.apache.spark.streaming.api.java.JavaDStream;
@@ -31,13 +32,12 @@ public class SparkOutput {
         zeroMQDataProviderThread.start();
 
         SparkConf sparkConf = new SparkConf()
-                //.set("spark.worker.instances", "1")
+                //.set("spark.default.parallelism", "1")
                 //.set("spark.executor.instances", "1")
                 //.set("spark.task.cpus", "1")
-                //.set("spark.streaming.backpressure.enabled", "true")
                 //.set("spark.executor.memory","4g")
-                //.setMaster("local[*]")
-                .setAppName("SparkOutput");
+                .setMaster("local[*]")
+                .setAppName("SparkOutput.sce2");
         JavaStreamingContext ssc = new JavaStreamingContext(sparkConf, new Duration(5000));
 
 
@@ -55,7 +55,12 @@ public class SparkOutput {
         //      Count each word in each batch
         JavaPairDStream<String, Integer> pairs = words.mapToPair(new StringMapper());
 
-        pairs.foreachRDD((VoidFunction)DSPConnectorFactory.getInstance().createOutputOperator(new DSPConnectorConfig.Builder()
+        //      Cumulate the sum from each batch
+        JavaPairDStream<String, Integer> wordCounts = pairs.reduceByKey(
+                (Function2<Integer, Integer, Integer>) (i1, i2) -> i1 + i2
+        );
+
+        wordCounts.foreachRDD((VoidFunction)DSPConnectorFactory.getInstance().createOutputOperator(new DSPConnectorConfig.Builder()
                 .withRouterAddress("0.0.0.0", outPutPort)
                 .withDSP("spark")
                 .withHWM(bufferSize)

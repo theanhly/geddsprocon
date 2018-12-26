@@ -1,17 +1,15 @@
-package de.tuberlin.mcc.geddsprocon.geddsproconcore.datastreamprocessorconnectors;
+package de.tuberlin.mcc.geddsprocon.geddsproconcore;
 
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.concurrent.ConcurrentHashMap;
 
-import de.tuberlin.mcc.geddsprocon.geddsproconcore.DSPConnectorConfig;
 import de.tuberlin.mcc.geddsprocon.geddsproconcore.tuple.Tuple2;
 import de.tuberlin.mcc.geddsprocon.geddsproconcore.tuple.Tuple3;
 import org.apache.commons.lang.NullArgumentException;
 import org.apache.commons.lang.SerializationUtils;
 import org.zeromq.ZMQ;
-import org.zeromq.ZMsg;
 
 public class SocketPool {
     public enum SocketType { PULL, PUSH, PUB, SUB, REP, REQ, ROUTER, DEALER, DEFAULT };
@@ -77,11 +75,11 @@ public class SocketPool {
 
     public synchronized void createSockets(SocketType socketType, DSPConnectorConfig config) {
         for(Tuple2<String, Integer> tuple : config.getAddresses()) {
-            createSocket(socketType, tuple.f0, tuple.f1, config);
+            createSocket(socketType, tuple.f_0, tuple.f_1, config);
         }
 
         for(Tuple3<String, Integer, String> tuple : config.getRequestAddresses()) {
-            createSocket(socketType, tuple.f0, tuple.f1, config);
+            createSocket(socketType, tuple.f_0, tuple.f_1, config);
         }
     }
 
@@ -185,8 +183,8 @@ public class SocketPool {
 
     @Deprecated
     public synchronized int sendSocket(int iteration, ArrayList<Tuple2<String, Integer>> addresses, byte[] message) {
-        String currentHost = addresses.get(iteration%addresses.size()).f0;
-        int currentPort = addresses.get(iteration%addresses.size()).f1;
+        String currentHost = addresses.get(iteration%addresses.size()).f_0;
+        int currentPort = addresses.get(iteration%addresses.size()).f_1;
 
         ZMQ.Socket socket = SocketPool.getInstance().getOrCreateSocket(currentHost, currentPort);
         String newHost = currentHost;
@@ -196,8 +194,8 @@ public class SocketPool {
             //socket.close();
             //SocketPool.getInstance().createSocket(SocketPool.SocketType.PUSH, newHost, newPort, this.config);
             iteration = i;
-            newHost = addresses.get(i%addresses.size()).f0;
-            newPort = addresses.get(i%addresses.size()).f1;
+            newHost = addresses.get(i%addresses.size()).f_0;
+            newPort = addresses.get(i%addresses.size()).f_1;
 
             socket = SocketPool.getInstance().getOrCreateSocket(newHost, newPort);
             System.out.println(new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS").format(new Date()).toString() + ": Sending failed. Sending " + SerializationUtils.deserialize(message).toString() + " to " + newHost + ":" + newPort);
@@ -211,7 +209,7 @@ public class SocketPool {
     public synchronized void stopSockets(DSPConnectorConfig config) {
         System.err.println("ERROR: STOPPING SOCKETS");
         for(Tuple2<String, Integer> tuple : config.getAddresses())
-            stopSocket(tuple.f0, tuple.f1);
+            stopSocket(tuple.f_0, tuple.f_1);
 
         // do not terminate sockets because it could lead to exception when an operator is restarted
         /*if(this.context != null) {

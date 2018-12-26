@@ -262,9 +262,6 @@ public class MessageBuffer {
                 this.messages = 0;
             }
         }
-
-        for(IMessageBufferListener listener : this.listener)
-            listener.bufferClearedEvent();
     }
 
     /**

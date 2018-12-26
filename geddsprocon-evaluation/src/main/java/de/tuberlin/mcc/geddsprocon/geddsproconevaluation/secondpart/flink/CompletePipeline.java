@@ -1,10 +1,11 @@
-package de.tuberlin.mcc.geddsprocon.geddsproconevaluation.firstpart.flink;
+package de.tuberlin.mcc.geddsprocon.geddsproconevaluation.secondpart.flink;
 
 import de.tuberlin.mcc.geddsprocon.geddsproconcore.DSPConnectorConfig;
 import de.tuberlin.mcc.geddsprocon.geddsproconcore.DSPConnectorFactory;
 import de.tuberlin.mcc.geddsprocon.geddsproconcore.SocketPool;
 import de.tuberlin.mcc.geddsprocon.geddsproconevaluation.common.ZeroMQDataProvider;
 import org.apache.flink.api.common.typeinfo.TypeInformation;
+import org.apache.flink.api.java.tuple.Tuple2;
 import org.apache.flink.api.java.utils.ParameterTool;
 import org.apache.flink.streaming.api.datastream.DataStream;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
@@ -25,7 +26,7 @@ public class CompletePipeline {
 
             StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
 
-            DataStream<String> dataStream = env
+            DataStream<Tuple2<String, Integer>> dataStream = env
                     .addSource((SourceFunction)DSPConnectorFactory.getInstance().createInputOperator(new DSPConnectorConfig.Builder("0.0.0.0", port)
                             .withSocketType(SocketPool.SocketType.PULL)
                             .withDSP("flink")
@@ -33,11 +34,16 @@ public class CompletePipeline {
                     .flatMap(new StringSplitter())
                     .keyBy("f0")
                     .timeWindow(Time.seconds(5))
-                    .sum("f1");;
+                    .sum("f1");
 
-            dataStream.print();
+            DataStream<Tuple2<String, Integer>> dataStream2 = dataStream
+                    .keyBy("f0")
+                    .timeWindow(Time.seconds(30))
+                    .sum("f1");
 
-            env.execute("Window WordCount");
+            dataStream2.print();
+
+            env.execute("CompletePipeline two aggregations");
         } catch(Exception ex) {
             System.err.println(ex.toString());
         }

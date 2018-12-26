@@ -28,7 +28,7 @@ import org.apache.flink.util.StringUtils;
 
 /**
  * A tuple with 12 fields. Tuples are strongly typed; each field may be of a separate type.
- * The fields of the tuple can be accessed directly as public fields (f0, f1, ...) or via their position
+ * The fields of the tuple can be accessed directly as public fields (f_0, f_1, ...) or via their position
  * through the {@link #getField(int)} method. The tuple field positions start at zero.
  *
  * <p>Tuples are mutable types, meaning that their fields can be re-assigned. This allows functions that work
@@ -62,29 +62,29 @@ public class Tuple12<T0, T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11> extends T
 	private static final long serialVersionUID = 1L;
 
 	/** Field 0 of the tuple. */
-	public T0 f0;
+	public T0 f_0;
 	/** Field 1 of the tuple. */
-	public T1 f1;
+	public T1 f_1;
 	/** Field 2 of the tuple. */
-	public T2 f2;
+	public T2 f_2;
 	/** Field 3 of the tuple. */
-	public T3 f3;
+	public T3 f_3;
 	/** Field 4 of the tuple. */
-	public T4 f4;
+	public T4 f_4;
 	/** Field 5 of the tuple. */
-	public T5 f5;
+	public T5 f_5;
 	/** Field 6 of the tuple. */
-	public T6 f6;
+	public T6 f_6;
 	/** Field 7 of the tuple. */
-	public T7 f7;
+	public T7 f_7;
 	/** Field 8 of the tuple. */
-	public T8 f8;
+	public T8 f_8;
 	/** Field 9 of the tuple. */
-	public T9 f9;
+	public T9 f_9;
 	/** Field 10 of the tuple. */
-	public T10 f10;
+	public T10 f_10;
 	/** Field 11 of the tuple. */
-	public T11 f11;
+	public T11 f_11;
 
 	/**
 	 * Creates a new tuple where all fields are null.
@@ -108,18 +108,18 @@ public class Tuple12<T0, T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11> extends T
 	 * @param value11 The value for field 11
 	 */
 	public Tuple12(T0 value0, T1 value1, T2 value2, T3 value3, T4 value4, T5 value5, T6 value6, T7 value7, T8 value8, T9 value9, T10 value10, T11 value11) {
-		this.f0 = value0;
-		this.f1 = value1;
-		this.f2 = value2;
-		this.f3 = value3;
-		this.f4 = value4;
-		this.f5 = value5;
-		this.f6 = value6;
-		this.f7 = value7;
-		this.f8 = value8;
-		this.f9 = value9;
-		this.f10 = value10;
-		this.f11 = value11;
+		this.f_0 = value0;
+		this.f_1 = value1;
+		this.f_2 = value2;
+		this.f_3 = value3;
+		this.f_4 = value4;
+		this.f_5 = value5;
+		this.f_6 = value6;
+		this.f_7 = value7;
+		this.f_8 = value8;
+		this.f_9 = value9;
+		this.f_10 = value10;
+		this.f_11 = value11;
 	}
 
 	@Override
@@ -131,18 +131,18 @@ public class Tuple12<T0, T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11> extends T
 	@SuppressWarnings("unchecked")
 	public <T> T getField(int pos) {
 		switch(pos) {
-			case 0: return (T) this.f0;
-			case 1: return (T) this.f1;
-			case 2: return (T) this.f2;
-			case 3: return (T) this.f3;
-			case 4: return (T) this.f4;
-			case 5: return (T) this.f5;
-			case 6: return (T) this.f6;
-			case 7: return (T) this.f7;
-			case 8: return (T) this.f8;
-			case 9: return (T) this.f9;
-			case 10: return (T) this.f10;
-			case 11: return (T) this.f11;
+			case 0: return (T) this.f_0;
+			case 1: return (T) this.f_1;
+			case 2: return (T) this.f_2;
+			case 3: return (T) this.f_3;
+			case 4: return (T) this.f_4;
+			case 5: return (T) this.f_5;
+			case 6: return (T) this.f_6;
+			case 7: return (T) this.f_7;
+			case 8: return (T) this.f_8;
+			case 9: return (T) this.f_9;
+			case 10: return (T) this.f_10;
+			case 11: return (T) this.f_11;
 			default: throw new IndexOutOfBoundsException(String.valueOf(pos));
 		}
 	}
@@ -152,40 +152,40 @@ public class Tuple12<T0, T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11> extends T
 	public <T> void setField(T value, int pos) {
 		switch(pos) {
 			case 0:
-				this.f0 = (T0) value;
+				this.f_0 = (T0) value;
 				break;
 			case 1:
-				this.f1 = (T1) value;
+				this.f_1 = (T1) value;
 				break;
 			case 2:
-				this.f2 = (T2) value;
+				this.f_2 = (T2) value;
 				break;
 			case 3:
-				this.f3 = (T3) value;
+				this.f_3 = (T3) value;
 				break;
 			case 4:
-				this.f4 = (T4) value;
+				this.f_4 = (T4) value;
 				break;
 			case 5:
-				this.f5 = (T5) value;
+				this.f_5 = (T5) value;
 				break;
 			case 6:
-				this.f6 = (T6) value;
+				this.f_6 = (T6) value;
 				break;
 			case 7:
-				this.f7 = (T7) value;
+				this.f_7 = (T7) value;
 				break;
 			case 8:
-				this.f8 = (T8) value;
+				this.f_8 = (T8) value;
 				break;
 			case 9:
-				this.f9 = (T9) value;
+				this.f_9 = (T9) value;
 				break;
 			case 10:
-				this.f10 = (T10) value;
+				this.f_10 = (T10) value;
 				break;
 			case 11:
-				this.f11 = (T11) value;
+				this.f_11 = (T11) value;
 				break;
 			default: throw new IndexOutOfBoundsException(String.valueOf(pos));
 		}
@@ -208,18 +208,18 @@ public class Tuple12<T0, T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11> extends T
 	 * @param value11 The value for field 11
 	 */
 	public void setFields(T0 value0, T1 value1, T2 value2, T3 value3, T4 value4, T5 value5, T6 value6, T7 value7, T8 value8, T9 value9, T10 value10, T11 value11) {
-		this.f0 = value0;
-		this.f1 = value1;
-		this.f2 = value2;
-		this.f3 = value3;
-		this.f4 = value4;
-		this.f5 = value5;
-		this.f6 = value6;
-		this.f7 = value7;
-		this.f8 = value8;
-		this.f9 = value9;
-		this.f10 = value10;
-		this.f11 = value11;
+		this.f_0 = value0;
+		this.f_1 = value1;
+		this.f_2 = value2;
+		this.f_3 = value3;
+		this.f_4 = value4;
+		this.f_5 = value5;
+		this.f_6 = value6;
+		this.f_7 = value7;
+		this.f_8 = value8;
+		this.f_9 = value9;
+		this.f_10 = value10;
+		this.f_11 = value11;
 	}
 
 
@@ -229,24 +229,24 @@ public class Tuple12<T0, T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11> extends T
 
 	/**
 	 * Creates a string representation of the tuple in the form
-	 * (f0, f1, f2, f3, f4, f5, f6, f7, f8, f9, f10, f11),
+	 * (f_0, f_1, f_2, f_3, f_4, f_5, f_6, f_7, f_8, f_9, f_10, f_11),
 	 * where the individual fields are the value returned by calling {@link Object#toString} on that field.
 	 * @return The string representation of the tuple.
 	 */
 	@Override
 	public String toString() {
-		return "(" + StringUtils.arrayAwareToString(this.f0)
-			+ "," + StringUtils.arrayAwareToString(this.f1)
-			+ "," + StringUtils.arrayAwareToString(this.f2)
-			+ "," + StringUtils.arrayAwareToString(this.f3)
-			+ "," + StringUtils.arrayAwareToString(this.f4)
-			+ "," + StringUtils.arrayAwareToString(this.f5)
-			+ "," + StringUtils.arrayAwareToString(this.f6)
-			+ "," + StringUtils.arrayAwareToString(this.f7)
-			+ "," + StringUtils.arrayAwareToString(this.f8)
-			+ "," + StringUtils.arrayAwareToString(this.f9)
-			+ "," + StringUtils.arrayAwareToString(this.f10)
-			+ "," + StringUtils.arrayAwareToString(this.f11)
+		return "(" + StringUtils.arrayAwareToString(this.f_0)
+			+ "," + StringUtils.arrayAwareToString(this.f_1)
+			+ "," + StringUtils.arrayAwareToString(this.f_2)
+			+ "," + StringUtils.arrayAwareToString(this.f_3)
+			+ "," + StringUtils.arrayAwareToString(this.f_4)
+			+ "," + StringUtils.arrayAwareToString(this.f_5)
+			+ "," + StringUtils.arrayAwareToString(this.f_6)
+			+ "," + StringUtils.arrayAwareToString(this.f_7)
+			+ "," + StringUtils.arrayAwareToString(this.f_8)
+			+ "," + StringUtils.arrayAwareToString(this.f_9)
+			+ "," + StringUtils.arrayAwareToString(this.f_10)
+			+ "," + StringUtils.arrayAwareToString(this.f_11)
 			+ ")";
 	}
 
@@ -265,40 +265,40 @@ public class Tuple12<T0, T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11> extends T
 		}
 		@SuppressWarnings("rawtypes")
 		Tuple12 tuple = (Tuple12) o;
-		if (f0 != null ? !f0.equals(tuple.f0) : tuple.f0 != null) {
+		if (f_0 != null ? !f_0.equals(tuple.f_0) : tuple.f_0 != null) {
 			return false;
 		}
-		if (f1 != null ? !f1.equals(tuple.f1) : tuple.f1 != null) {
+		if (f_1 != null ? !f_1.equals(tuple.f_1) : tuple.f_1 != null) {
 			return false;
 		}
-		if (f2 != null ? !f2.equals(tuple.f2) : tuple.f2 != null) {
+		if (f_2 != null ? !f_2.equals(tuple.f_2) : tuple.f_2 != null) {
 			return false;
 		}
-		if (f3 != null ? !f3.equals(tuple.f3) : tuple.f3 != null) {
+		if (f_3 != null ? !f_3.equals(tuple.f_3) : tuple.f_3 != null) {
 			return false;
 		}
-		if (f4 != null ? !f4.equals(tuple.f4) : tuple.f4 != null) {
+		if (f_4 != null ? !f_4.equals(tuple.f_4) : tuple.f_4 != null) {
 			return false;
 		}
-		if (f5 != null ? !f5.equals(tuple.f5) : tuple.f5 != null) {
+		if (f_5 != null ? !f_5.equals(tuple.f_5) : tuple.f_5 != null) {
 			return false;
 		}
-		if (f6 != null ? !f6.equals(tuple.f6) : tuple.f6 != null) {
+		if (f_6 != null ? !f_6.equals(tuple.f_6) : tuple.f_6 != null) {
 			return false;
 		}
-		if (f7 != null ? !f7.equals(tuple.f7) : tuple.f7 != null) {
+		if (f_7 != null ? !f_7.equals(tuple.f_7) : tuple.f_7 != null) {
 			return false;
 		}
-		if (f8 != null ? !f8.equals(tuple.f8) : tuple.f8 != null) {
+		if (f_8 != null ? !f_8.equals(tuple.f_8) : tuple.f_8 != null) {
 			return false;
 		}
-		if (f9 != null ? !f9.equals(tuple.f9) : tuple.f9 != null) {
+		if (f_9 != null ? !f_9.equals(tuple.f_9) : tuple.f_9 != null) {
 			return false;
 		}
-		if (f10 != null ? !f10.equals(tuple.f10) : tuple.f10 != null) {
+		if (f_10 != null ? !f_10.equals(tuple.f_10) : tuple.f_10 != null) {
 			return false;
 		}
-		if (f11 != null ? !f11.equals(tuple.f11) : tuple.f11 != null) {
+		if (f_11 != null ? !f_11.equals(tuple.f_11) : tuple.f_11 != null) {
 			return false;
 		}
 		return true;
@@ -306,18 +306,18 @@ public class Tuple12<T0, T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11> extends T
 
 	@Override
 	public int hashCode() {
-		int result = f0 != null ? f0.hashCode() : 0;
-		result = 31 * result + (f1 != null ? f1.hashCode() : 0);
-		result = 31 * result + (f2 != null ? f2.hashCode() : 0);
-		result = 31 * result + (f3 != null ? f3.hashCode() : 0);
-		result = 31 * result + (f4 != null ? f4.hashCode() : 0);
-		result = 31 * result + (f5 != null ? f5.hashCode() : 0);
-		result = 31 * result + (f6 != null ? f6.hashCode() : 0);
-		result = 31 * result + (f7 != null ? f7.hashCode() : 0);
-		result = 31 * result + (f8 != null ? f8.hashCode() : 0);
-		result = 31 * result + (f9 != null ? f9.hashCode() : 0);
-		result = 31 * result + (f10 != null ? f10.hashCode() : 0);
-		result = 31 * result + (f11 != null ? f11.hashCode() : 0);
+		int result = f_0 != null ? f_0.hashCode() : 0;
+		result = 31 * result + (f_1 != null ? f_1.hashCode() : 0);
+		result = 31 * result + (f_2 != null ? f_2.hashCode() : 0);
+		result = 31 * result + (f_3 != null ? f_3.hashCode() : 0);
+		result = 31 * result + (f_4 != null ? f_4.hashCode() : 0);
+		result = 31 * result + (f_5 != null ? f_5.hashCode() : 0);
+		result = 31 * result + (f_6 != null ? f_6.hashCode() : 0);
+		result = 31 * result + (f_7 != null ? f_7.hashCode() : 0);
+		result = 31 * result + (f_8 != null ? f_8.hashCode() : 0);
+		result = 31 * result + (f_9 != null ? f_9.hashCode() : 0);
+		result = 31 * result + (f_10 != null ? f_10.hashCode() : 0);
+		result = 31 * result + (f_11 != null ? f_11.hashCode() : 0);
 		return result;
 	}
 
@@ -328,18 +328,18 @@ public class Tuple12<T0, T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11> extends T
 	@Override
 	@SuppressWarnings("unchecked")
 	public Tuple12<T0, T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11> copy() {
-		return new Tuple12<>(this.f0,
-			this.f1,
-			this.f2,
-			this.f3,
-			this.f4,
-			this.f5,
-			this.f6,
-			this.f7,
-			this.f8,
-			this.f9,
-			this.f10,
-			this.f11);
+		return new Tuple12<>(this.f_0,
+			this.f_1,
+			this.f_2,
+			this.f_3,
+			this.f_4,
+			this.f_5,
+			this.f_6,
+			this.f_7,
+			this.f_8,
+			this.f_9,
+			this.f_10,
+			this.f_11);
 	}
 
 	/**

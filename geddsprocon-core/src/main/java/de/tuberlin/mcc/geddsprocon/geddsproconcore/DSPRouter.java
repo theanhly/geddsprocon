@@ -1,7 +1,6 @@
 package de.tuberlin.mcc.geddsprocon.geddsproconcore;
 
 import com.google.common.base.Strings;
-import de.tuberlin.mcc.geddsprocon.geddsproconcore.datastreamprocessorconnectors.SocketPool;
 import de.tuberlin.mcc.geddsprocon.geddsproconcore.messagebuffer.IMessageBufferFunction;
 import de.tuberlin.mcc.geddsprocon.geddsproconcore.messagebuffer.IMessageBufferListener;
 import de.tuberlin.mcc.geddsprocon.geddsproconcore.messagebuffer.MessageBuffer;
@@ -95,17 +94,21 @@ public class DSPRouter implements Runnable, IMessageBufferListener {
      * go through the queue and send to the addresses in the queue
      * @return return true if sending was successful
      */
-    private boolean reply() {
-        ZFrame addressFrame;
-        do {
-            addressFrame = this.endpointQueue.pop();
-            this.temporaryPrimary = addressFrame.duplicate();
-            this.endpointSet.remove(addressFrame);
-            //System.out.println("Address popped");
-        } while(!reply(addressFrame));
+    private synchronized boolean reply() {
+        if(DSPManager.getInstance().getBuffer(this.routerAdress).isFull() &&  this.endpointQueue != null && this.endpointQueue.size() > 0) {
+            ZFrame addressFrame = null;
+            do {
+                addressFrame = this.endpointQueue.pop();
+                this.temporaryPrimary = addressFrame.duplicate();
+                this.endpointSet.remove(addressFrame);
+                //System.out.println("Address popped");
+            } while(addressFrame != null && !reply(addressFrame));
 
-        System.out.println("Reply sent to " + addressFrame.toString());
-        return true;
+            System.out.println("Reply sent to " + addressFrame.toString());
+            return true;
+        }
+
+        return false;
     }
 
     /**
@@ -137,7 +140,7 @@ public class DSPRouter implements Runnable, IMessageBufferListener {
         Object bufferLock = DSPManager.getInstance().getBuffer(this.routerAdress).getBufferLock();
         synchronized (bufferLock) {
             if(resendPrevBuffer)
-                System.out.println("Resending buffer: " + this.lastReceivedMessageNumber);
+                System.out.println(Thread.currentThread().getId() + " ( Thread ID): Resending buffer: " + this.lastReceivedMessageNumber);
             /*else
                 System.out.println("Sending new  buffer");*/
             ZMsg buffermsg = DSPManager.getInstance().getBuffer(this.routerAdress).flushBuffer(this.bufferFunction, false, resendPrevBuffer);
@@ -161,16 +164,11 @@ public class DSPRouter implements Runnable, IMessageBufferListener {
      */
     @Override
     public void bufferIsFullEvent() {
-        while(this.endpointQueue.isEmpty() && DSPManager.getInstance().getBuffer(this.routerAdress).isFull()) {}
+        //while(this.endpointQueue.isEmpty() && DSPManager.getInstance().getBuffer(this.routerAdress).isFull()) {}
 
         //System.out.println("Buffer event");
         if(DSPManager.getInstance().getBuffer(this.routerAdress).isFull())
             reply();
-    }
-
-    @Override
-    public void bufferClearedEvent() {
-        // Nothing to do if the buffer has been cleared
     }
 
     public void stop() {
