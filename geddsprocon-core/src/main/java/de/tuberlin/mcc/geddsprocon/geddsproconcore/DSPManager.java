@@ -3,7 +3,6 @@ package de.tuberlin.mcc.geddsprocon.geddsproconcore;
 import com.google.common.base.Strings;
 import de.tuberlin.mcc.geddsprocon.geddsproconcore.datastreamprocessorconnectors.IDSPInputOperator;
 import de.tuberlin.mcc.geddsprocon.geddsproconcore.datastreamprocessorconnectors.IDSPOutputOperator;
-import de.tuberlin.mcc.geddsprocon.geddsproconcore.datastreamprocessorconnectors.SocketPool;
 import de.tuberlin.mcc.geddsprocon.geddsproconcore.messagebuffer.IMessageBufferListener;
 import de.tuberlin.mcc.geddsprocon.geddsproconcore.messagebuffer.MessageBuffer;
 import de.tuberlin.mcc.geddsprocon.geddsproconcore.tuple.Tuple3;

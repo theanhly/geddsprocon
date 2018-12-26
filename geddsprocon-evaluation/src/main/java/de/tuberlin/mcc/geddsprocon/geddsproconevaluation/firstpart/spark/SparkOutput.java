@@ -2,11 +2,10 @@ package de.tuberlin.mcc.geddsprocon.geddsproconevaluation.firstpart.spark;
 
 import de.tuberlin.mcc.geddsprocon.geddsproconcore.DSPConnectorConfig;
 import de.tuberlin.mcc.geddsprocon.geddsproconcore.DSPConnectorFactory;
-import de.tuberlin.mcc.geddsprocon.geddsproconcore.datastreamprocessorconnectors.SocketPool;
+import de.tuberlin.mcc.geddsprocon.geddsproconcore.SocketPool;
 import de.tuberlin.mcc.geddsprocon.geddsproconevaluation.common.ZeroMQDataProvider;
 import org.apache.flink.api.java.utils.ParameterTool;
 import org.apache.spark.SparkConf;
-import org.apache.spark.api.java.function.Function2;
 import org.apache.spark.api.java.function.VoidFunction;
 import org.apache.spark.streaming.Duration;
 import org.apache.spark.streaming.api.java.JavaDStream;
@@ -56,7 +55,8 @@ public class SparkOutput {
         //      Count each word in each batch
         JavaPairDStream<String, Integer> pairs = words.mapToPair(new StringMapper());
 
-        pairs.foreachRDD((VoidFunction)DSPConnectorFactory.getInstance().createOutputOperator(new DSPConnectorConfig.Builder("0.0.0.0", outPutPort)
+        pairs.foreachRDD((VoidFunction)DSPConnectorFactory.getInstance().createOutputOperator(new DSPConnectorConfig.Builder()
+                .withRouterAddress("0.0.0.0", outPutPort)
                 .withDSP("spark")
                 .withHWM(bufferSize)
                 .withTimeout(10000)

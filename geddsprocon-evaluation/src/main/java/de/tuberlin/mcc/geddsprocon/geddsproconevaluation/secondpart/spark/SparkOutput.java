@@ -2,7 +2,7 @@ package de.tuberlin.mcc.geddsprocon.geddsproconevaluation.secondpart.spark;
 
 import de.tuberlin.mcc.geddsprocon.geddsproconcore.DSPConnectorConfig;
 import de.tuberlin.mcc.geddsprocon.geddsproconcore.DSPConnectorFactory;
-import de.tuberlin.mcc.geddsprocon.geddsproconcore.datastreamprocessorconnectors.SocketPool;
+import de.tuberlin.mcc.geddsprocon.geddsproconcore.SocketPool;
 import de.tuberlin.mcc.geddsprocon.geddsproconevaluation.common.ZeroMQDataProvider;
 import org.apache.flink.api.java.utils.ParameterTool;
 import org.apache.spark.SparkConf;
@@ -60,7 +60,8 @@ public class SparkOutput {
                 (Function2<Integer, Integer, Integer>) (i1, i2) -> i1 + i2
         );
 
-        wordCounts.foreachRDD((VoidFunction)DSPConnectorFactory.getInstance().createOutputOperator(new DSPConnectorConfig.Builder("0.0.0.0", outPutPort)
+        wordCounts.foreachRDD((VoidFunction)DSPConnectorFactory.getInstance().createOutputOperator(new DSPConnectorConfig.Builder()
+                .withRouterAddress("0.0.0.0", outPutPort)
                 .withDSP("spark")
                 .withHWM(bufferSize)
                 .withTimeout(10000)

@@ -2,7 +2,6 @@ package de.tuberlin.mcc.geddsprocon.geddsproconcore;
 
 
 import com.google.common.base.Strings;
-import de.tuberlin.mcc.geddsprocon.geddsproconcore.datastreamprocessorconnectors.SocketPool;
 import de.tuberlin.mcc.geddsprocon.geddsproconcore.tuple.Tuple2;
 import de.tuberlin.mcc.geddsprocon.geddsproconcore.tuple.Tuple3;
 
@@ -86,12 +85,9 @@ public class DSPConnectorConfig implements Serializable {
         }
 
         public Builder(String host, int port) {
-            this.host = host;
-            this.port = port;
             this.addresses = new ArrayList<>();
             this.requestAddresses = new ArrayList<>();
-            if(!Strings.isNullOrEmpty(this.host) && this.port > 0)
-                this.addresses.add(new Tuple2<>(host,port));
+            withRouterAddress(host, port);
         }
 
         /**
@@ -116,6 +112,16 @@ public class DSPConnectorConfig implements Serializable {
          */
         public Builder withRequestAddress(String host, int port, String connectorType) {
             this.requestAddresses.add(new Tuple3<>(host,port, connectorType));
+            return this;
+        }
+
+        public Builder withRouterAddress(String host, int port) {
+            this.host = host;
+            this.port = port;
+            this.addresses = new ArrayList<>();
+            this.requestAddresses = new ArrayList<>();
+            if(!Strings.isNullOrEmpty(this.host) && this.port > 0)
+                this.addresses.add(new Tuple2<>(host,port));
             return this;
         }
 

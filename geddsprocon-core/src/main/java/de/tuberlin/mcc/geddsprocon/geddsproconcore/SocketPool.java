@@ -1,17 +1,15 @@
-package de.tuberlin.mcc.geddsprocon.geddsproconcore.datastreamprocessorconnectors;
+package de.tuberlin.mcc.geddsprocon.geddsproconcore;
 
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.concurrent.ConcurrentHashMap;
 
-import de.tuberlin.mcc.geddsprocon.geddsproconcore.DSPConnectorConfig;
 import de.tuberlin.mcc.geddsprocon.geddsproconcore.tuple.Tuple2;
 import de.tuberlin.mcc.geddsprocon.geddsproconcore.tuple.Tuple3;
 import org.apache.commons.lang.NullArgumentException;
 import org.apache.commons.lang.SerializationUtils;
 import org.zeromq.ZMQ;
-import org.zeromq.ZMsg;
 
 public class SocketPool {
     public enum SocketType { PULL, PUSH, PUB, SUB, REP, REQ, ROUTER, DEALER, DEFAULT };
