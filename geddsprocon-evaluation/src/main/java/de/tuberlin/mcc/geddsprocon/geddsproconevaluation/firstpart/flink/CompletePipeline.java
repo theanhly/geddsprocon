@@ -3,7 +3,9 @@ package de.tuberlin.mcc.geddsprocon.geddsproconevaluation.firstpart.flink;
 import de.tuberlin.mcc.geddsprocon.geddsproconcore.DSPConnectorConfig;
 import de.tuberlin.mcc.geddsprocon.geddsproconcore.DSPConnectorFactory;
 import de.tuberlin.mcc.geddsprocon.geddsproconcore.datastreamprocessorconnectors.SocketPool;
+import de.tuberlin.mcc.geddsprocon.geddsproconevaluation.common.ZeroMQDataProvider;
 import org.apache.flink.api.common.typeinfo.TypeInformation;
+import org.apache.flink.api.java.utils.ParameterTool;
 import org.apache.flink.streaming.api.datastream.DataStream;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 import org.apache.flink.streaming.api.functions.source.SourceFunction;
@@ -13,16 +15,18 @@ public class CompletePipeline {
 
     public static void main(String[] args) {
         try{
-            String host = "localhost";
-            int port = 9665;
-            String file = "/home/theanhly/Schreibtisch/amazon_reviews_us_Video_DVD_v1_00.tsv";
+            ParameterTool parameters = ParameterTool.fromArgs(args);
+            String host = parameters.get("host", "0.0.0.0");
+            int port = Integer.parseInt(parameters.get("port", "9665"));
+
+            String file = "/home/hadoop/thesis-evaluation/amazon_reviews_us_Video_DVD_v1_00.tsv";
             Thread zeroMQDataProviderThread = new Thread(new ZeroMQDataProvider(host, port, file));
             zeroMQDataProviderThread.start();
 
             StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
 
             DataStream<String> dataStream = env
-                    .addSource((SourceFunction)DSPConnectorFactory.getInstance().createInputOperator(new DSPConnectorConfig.Builder(host, port)
+                    .addSource((SourceFunction)DSPConnectorFactory.getInstance().createInputOperator(new DSPConnectorConfig.Builder("0.0.0.0", port)
                             .withSocketType(SocketPool.SocketType.PULL)
                             .withDSP("flink")
                             .build()), TypeInformation.of(String.class))

@@ -21,6 +21,18 @@
         <maven.compiler.target>${java.version}</maven.compiler.target>
     </properties>
 
+    <dependencyManagement>
+        <dependencies>
+            <dependency>
+                <groupId>com.amazonaws</groupId>
+                <artifactId>aws-java-sdk-bom</artifactId>
+                <version>1.11.327</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+        </dependencies>
+    </dependencyManagement>
+
     <repositories>
         <repository>
             <id>apache.snapshots</id>
@@ -128,6 +140,12 @@
             <artifactId>commons-lang</artifactId>
             <version>2.5</version>
         </dependency>-->
+
+        <!-- AWS dependencies -->
+        <dependency>
+            <groupId>com.amazonaws</groupId>
+            <artifactId>aws-java-sdk-s3</artifactId>
+        </dependency>
     </dependencies>
 
     <build>
@@ -180,7 +198,7 @@
                             </filters>
                             <transformers>
                                 <transformer implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
-                                    <mainClass>de.tuberlin.mcc.geddsprocon.geddsproconevaluation.firstpart.flink.CompletePipeline</mainClass>
+                                    <mainClass>de.tuberlin.mcc.geddsprocon.geddsproconevaluation.secondpart.spark.SparkInput</mainClass>
                                 </transformer>
                             </transformers>
                         </configuration>
