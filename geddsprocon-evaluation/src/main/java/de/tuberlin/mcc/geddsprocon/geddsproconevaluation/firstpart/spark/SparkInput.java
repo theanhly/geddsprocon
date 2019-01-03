@@ -6,7 +6,6 @@ import org.apache.flink.api.java.utils.ParameterTool;
 import org.apache.spark.SparkConf;
 import org.apache.spark.api.java.function.Function2;
 import org.apache.spark.api.java.function.PairFunction;
-import org.apache.spark.serializer.KryoSerializer;
 import org.apache.spark.streaming.Duration;
 import org.apache.spark.streaming.api.java.JavaPairDStream;
 import org.apache.spark.streaming.api.java.JavaReceiverInputDStream;
@@ -21,6 +20,7 @@ public class SparkInput {
         String host = parameters.get("host", "0.0.0.0");
         int inputPort = Integer.parseInt(parameters.get("port", "9656"));
         int bufferSize = Integer.parseInt(parameters.getRequired("buffer"));
+        boolean requesterFaultTolerance = Boolean.parseBoolean(parameters.get("fault-tolerance", "false"));
 
         SparkConf sparkConf = new SparkConf()
                 //.set("spark.task.cpus", "1")
@@ -38,6 +38,7 @@ public class SparkInput {
                 .withRequestAddress(host, inputPort, DSPConnectorFactory.ConnectorType.PRIMARY)
                 .withTimeout(1000)
                 .withHWM(bufferSize)
+                .withInputOperatorFaultTolerance(requesterFaultTolerance)
                 .build()));
 
         //      Count each word in each batch

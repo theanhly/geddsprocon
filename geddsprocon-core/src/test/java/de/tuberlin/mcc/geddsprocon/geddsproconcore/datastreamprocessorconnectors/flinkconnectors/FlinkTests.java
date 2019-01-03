@@ -29,24 +29,48 @@ import org.zeromq.ZMQ;
 public class FlinkTests {
 
     public class Splitter implements FlatMapFunction<String, Tuple2<String, Integer>> {
+        private boolean throwExc;
+        public Splitter()
+        {
+            this(false);
+        }
+
+        public Splitter(boolean throwExc)
+        {
+            this.throwExc = throwExc;
+        }
+
         @Override
         public void flatMap(String sentence, Collector<Tuple2<String, Integer>> out) throws Exception {
             for (String word: sentence.split(" ")) {
                 out.collect(new Tuple2<String, Integer>(word, 1));
 
-                if(word.equals("throw_exception"))
+                if(this.throwExc && word.equals("throw_exception")) {
+                    Thread.sleep(10000);
+                    System.err.println("Exception provoked");
                     throw new Exception("Exception provoked!");
+                }
             }
         }
     }
 
     public class TupleMapper implements FlatMapFunction<Tuple2<String, Integer>, Tuple2<String, Integer>> {
-        private long counter = 0;
+        private long exCounter = 0;
+        private boolean throwExc;
+        public TupleMapper() {
+            this(false);
+        }
+
+        public TupleMapper(boolean throwExec) {
+            this.throwExc = throwExec;
+        }
 
         @Override
         public void flatMap(Tuple2<String, Integer> inputTuple, Collector<Tuple2<String, Integer>> out) throws Exception {
-            if(inputTuple.f0.equals("throw_exception")) {
-                Thread.sleep(10000);
+            if(this.throwExc && this.exCounter < 1 && inputTuple.f0.equals("throw_exception")) {
+                //Thread.sleep(10000);
+                System.err.println("Exception provoked");
+                this.exCounter++;
                 throw new Exception("Exception provoked");
             } else {
                 out.collect(inputTuple);
@@ -238,17 +262,16 @@ public class FlinkTests {
             String[] testArray = new String[3];
             testArray[0] = "HelloFromFlink a b c d e f g h i j k l m n o p q r s t u v w x y z";
             testArray[1] = "throw_exception";
-            testArray[2] = "HelloFromFlink a b c d e f g h i j k l m n o p q r s t u v w x y z";
+            testArray[2] = "HelloFromFlink2 a2 b2 c2 d2 e2 f2 g2 h2 i2 j2 k2 l2 m2 n2 o2 p2 q2 r2 s2 t2 u2 v2 w2 x2 y2 z2";
 
             for(int i = 0; i < testArray.length; i++) {
                 System.out.println("Sending: " + testArray[i]);
-                Thread.sleep(3000);
                 sender.send(SerializationTool.serialize(testArray[i]), 0);
             }
 
-            StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment().setParallelism(4);
+            StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment().setParallelism(1);
             env.enableCheckpointing(500);
-            env.setRestartStrategy(RestartStrategies.fixedDelayRestart(3, 100));
+            env.setRestartStrategy(RestartStrategies.fixedDelayRestart(3, 1000));
 
 
 
@@ -257,12 +280,11 @@ public class FlinkTests {
                             .withSocketType(SocketPool.SocketType.PULL)
                             .withDSP("flink")
                             .build()), TypeInformation.of(String.class))
-                    .flatMap(new Splitter());
+                    .flatMap(new Splitter(false));
 
             dataStream.addSink((SinkFunction)DSPConnectorFactory.getInstance().createOutputOperator(new DSPConnectorConfig.Builder("localhost", 9656)
                     .withDSP("flink")
                     .withHWM(500)
-                    //.withBufferConnectorString("sendbuffer")
                     .withTimeout(10000)
                     .build()));
 
@@ -281,16 +303,16 @@ public class FlinkTests {
         try {
             StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment().setParallelism(1);
             env.enableCheckpointing(500);
-            env.setRestartStrategy(RestartStrategies.fixedDelayRestart(3, 100));
+            env.setRestartStrategy(RestartStrategies.fixedDelayRestart(3, 1000));
 
             DataStream<Tuple2<String, Integer>> dataStream = env
                     .addSource((SourceFunction)DSPConnectorFactory.getInstance().createInputOperator(new DSPConnectorConfig.Builder()
                             .withDSP("flink")
-                            //.withBufferConnectorString("recvbuffer")
+                            .withHWM(500)
+                            .withInputOperatorFaultTolerance(true)
                             .withRequestAddress("localhost", 9656, DSPConnectorFactory.ConnectorType.PRIMARY)
-                            .withRequestAddress("localhost", 9666, DSPConnectorFactory.ConnectorType.PRIMARY)
                             .build()), TypeInfoParser.parse("Tuple2<String,Integer>"))
-                    .flatMap(new TupleMapper())
+                    .flatMap(new TupleMapper(true))
                     .keyBy("f0")
                     .timeWindow(Time.seconds(5))
                     .sum("f1");

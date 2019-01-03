@@ -1,12 +1,12 @@
 package de.tuberlin.mcc.geddsprocon.geddsproconcore.datastreamprocessorconnectors.sparkconnectors;
 
-import com.google.common.base.Strings;
 import de.tuberlin.mcc.geddsprocon.geddsproconcore.DSPConnectorConfig;
 import de.tuberlin.mcc.geddsprocon.geddsproconcore.DSPManager;
 import de.tuberlin.mcc.geddsprocon.geddsproconcore.common.SerializationTool;
 import de.tuberlin.mcc.geddsprocon.geddsproconcore.datastreamprocessorconnectors.IDSPInputOperator;
 import de.tuberlin.mcc.geddsprocon.geddsproconcore.SocketPool;
 import de.tuberlin.mcc.geddsprocon.geddsproconcore.messagebuffer.IMessageBufferFunction;
+import de.tuberlin.mcc.geddsprocon.geddsproconcore.tuple.Tuple3;
 import org.apache.spark.storage.StorageLevel;
 import org.apache.spark.streaming.receiver.Receiver;
 import org.zeromq.ZFrame;
@@ -25,7 +25,12 @@ public class SparkInputOperator extends Receiver<Serializable> implements IDSPIn
 
     public SparkInputOperator(DSPConnectorConfig config) {
         super(StorageLevel.MEMORY_AND_DISK_2());
-        this.messageBufferConnectionString = !Strings.isNullOrEmpty(config.getBufferConnectionString()) ? "ipc:///" + config.getBufferConnectionString() : "";
+        this.messageBufferConnectionString = ""; //!Strings.isNullOrEmpty(config.getBufferConnectionString()) ? "ipc:///" + config.getBufferConnectionString() : "";
+        if(config.getInputOperatorFaultTolerance()) {
+            for(Tuple3<String, Integer, String> tuple : config.getRequestAddresses())
+                this.messageBufferConnectionString  += tuple.f_0 + ":" + tuple.f_1 + ";";
+        }
+
         this.config = config;
         this.host = this.config.getHost();
         this.port = this.config.getPort();
@@ -69,8 +74,8 @@ public class SparkInputOperator extends Receiver<Serializable> implements IDSPIn
                         store(message);
                     }
                 } else if (config.getSocketType() == SocketPool.SocketType.REQ || config.getSocketType() == SocketPool.SocketType.DEFAULT) {
-                    if(!DSPManager.getInstance().getBuffer(this.messageBufferConnectionString, this).isEmpty()) {
-                        DSPManager.getInstance().getBuffer(this.messageBufferConnectionString, this).flushBuffer(this);
+                    if(!DSPManager.getInstance().getBuffer(this.messageBufferConnectionString, this, this.config).isEmpty()) {
+                        DSPManager.getInstance().getBuffer(this.messageBufferConnectionString, this, this.config).flushBuffer(this);
                     }
                 }
             }

@@ -14,7 +14,8 @@ public class DSPManager {
 
     private ArrayList<Tuple3<String, Integer, String>> addresses;
     private String messageBufferConnectionString;
-    private HashMap<String, MessageBuffer> bufferProcessMap;
+    private HashMap<String, MessageBuffer> inputBufferMap;
+    private HashMap<String, MessageBuffer> outputBufferMap;
     private HashMap<String, Thread> dspRouterMap;
     private HashMap<IDSPInputOperator, Thread> inputOpRequesterThreadMap;
     private HashMap<IDSPInputOperator, MessageBuffer> inputOpBufferMap;
@@ -32,7 +33,8 @@ public class DSPManager {
     private DSPManager() {
         this.addresses = new ArrayList<>();
         this.inputOpRequesterThreadMap = new HashMap<>();
-        this.bufferProcessMap = new HashMap<>();
+        this.inputBufferMap = new HashMap<>();
+        this.outputBufferMap = new HashMap<>();
         this.inputOpBufferMap = new HashMap<>();
         this.dspRouterMap = new HashMap<>();
         this.lastReceivedMessageID = -1;
@@ -68,19 +70,35 @@ public class DSPManager {
     public void initiateInputOperator(DSPConnectorConfig config, IDSPInputOperator inputOp) {
         MessageBuffer messageBuffer = null;
         String messageBufferConnectionString = "";
+        for(Tuple3<String, Integer, String> tuple : config.getRequestAddresses())
+            messageBufferConnectionString += tuple.f_0 + ":" + tuple.f_1 + ";";
+
         if(config.getSocketType() == SocketPool.SocketType.REQ || config.getSocketType() == SocketPool.SocketType.DEFAULT) {
             if(Strings.isNullOrEmpty(config.getBufferConnectionString())) {
-                messageBuffer = new MessageBuffer();
-                messageBufferConnectionString = messageBuffer.initiateBuffer(config, false);
-                System.out.println("Init input op: " + Thread.currentThread().getId() + " buffer: " + messageBuffer.hashCode());
-                this.inputOpBufferMap.put(inputOp, messageBuffer);
+                if(config.getInputOperatorFaultTolerance()) {
+                    if(!this.inputBufferMap.containsKey(messageBufferConnectionString)) {
+                        messageBuffer = new MessageBuffer();
+                        messageBuffer.initiateBuffer(config, false);
+                        this.inputBufferMap.put(messageBufferConnectionString, messageBuffer);
+                        System.out.println("using fault tolerance: " );
+                    } else {
+                        messageBuffer = this.inputBufferMap.get(messageBufferConnectionString);
+                        System.out.println("Init buffer mit available message buffer: " + messageBuffer.getMessages());
+                    }
+                } else {
+                    messageBuffer = new MessageBuffer();
+                    messageBufferConnectionString = messageBuffer.initiateBuffer(config, false);
+                    System.out.println("Init input op: " + Thread.currentThread().getId() + " buffer: " + messageBuffer.hashCode());
+                    this.inputOpBufferMap.put(inputOp, messageBuffer);
+                }
             } else {
-                if(this.bufferProcessMap.containsKey("ipc:///" + config.getBufferConnectionString()))
+                // deprecated. attempt of using buffer process
+                if(this.inputBufferMap.containsKey("ipc:///" + config.getBufferConnectionString()))
                     return;
 
                 messageBuffer = new MessageBuffer();
                 messageBufferConnectionString = messageBuffer.initiateBuffer(config, false);
-                this.bufferProcessMap.put(messageBufferConnectionString, messageBuffer);
+                this.inputBufferMap.put(messageBufferConnectionString, messageBuffer);
             }
         }
 
@@ -99,14 +117,16 @@ public class DSPManager {
         String messageBufferString = Strings.isNullOrEmpty(config.getBufferConnectionString()) ? routerAddress : config.getBufferConnectionString();
         MessageBuffer messageBuffer = null;
 
-        if(!this.bufferProcessMap.containsKey(messageBufferString)) {
+        if(!this.outputBufferMap.containsKey(messageBufferString)) {
             //String messageBufferConnectionString = messageBuffer.initiateBuffer(config);
-            //this.bufferProcessMap.put(messageBufferConnectionString, messageBuffer);
+            //this.outputBufferMap.put(messageBufferConnectionString, messageBuffer);
             messageBuffer = new MessageBuffer();
             messageBufferString = messageBuffer.initiateBuffer(config);
-            this.bufferProcessMap.put(messageBufferString, messageBuffer);
-        } else
-            messageBuffer = this.bufferProcessMap.get(messageBufferString);
+            this.outputBufferMap.put(messageBufferString, messageBuffer);
+        } else {
+            messageBuffer = this.outputBufferMap.get(messageBufferString);
+            System.out.println("Buffer content: " + messageBuffer.getMessages());
+        }
 
         // initiate the router if the router only if a router with the same host:port hasn't been started yet
         synchronized (this.getDspRouterLock()) {
@@ -117,7 +137,7 @@ public class DSPManager {
                 if(outputOp instanceof IMessageBufferListener)
                     messageBuffer.addListener((IMessageBufferListener)outputOp);
 
-                // start the manager thread
+                // start the router thread
                 Thread routerThread = new Thread(router);
                 routerThread.start();
                 this.dspRouterMap.put(routerAddress, routerThread);
@@ -133,8 +153,9 @@ public class DSPManager {
                 requesterThread.interrupt();
                 try {
                     requesterThread.join();
+                    System.err.println("WARNING: Requester thread joined.");
                 } catch(InterruptedException ex) {
-                    System.out.println("Requester thread interrupted.");
+                    System.err.println("Requester thread interrupted.");
                 }
                 this.inputOpRequesterThreadMap.remove(inputOperator);
             }
@@ -150,8 +171,9 @@ public class DSPManager {
                 routerThread.interrupt();
                 try {
                     routerThread.join();
+                    System.err.println("WARNING: Router thread joined.");
                 } catch(InterruptedException ex) {
-                    System.out.println("Router thread interrupted.");
+                    System.err.println("Router thread interrupted.");
                 }
                 this.dspRouterMap.remove(routerAddress);
             }
@@ -165,19 +187,24 @@ public class DSPManager {
      * @return The requested message buffer
      */
     public MessageBuffer getBuffer(String messageBufferConnectionString) {
-        if(this.bufferProcessMap.containsKey(messageBufferConnectionString))
-            return this.bufferProcessMap.get(messageBufferConnectionString);
+        if(this.outputBufferMap.containsKey(messageBufferConnectionString))
+            return this.outputBufferMap.get(messageBufferConnectionString);
 
         return null;
     }
 
-    public MessageBuffer getBuffer(String messageBufferConnectionString, IDSPInputOperator inputOp) {
-        if(Strings.isNullOrEmpty(messageBufferConnectionString))  {
-            if(this.inputOpBufferMap.containsKey(inputOp))
-                return this.inputOpBufferMap.get(inputOp);
+    public MessageBuffer getBuffer(String messageBufferConnectionString, IDSPInputOperator inputOp, DSPConnectorConfig config) {
+        if(config.getInputOperatorFaultTolerance()) {
+            if(this.inputBufferMap.containsKey(messageBufferConnectionString))
+                return this.inputBufferMap.get(messageBufferConnectionString);
         } else {
-            if(this.bufferProcessMap.containsKey(messageBufferConnectionString))
-                return this.bufferProcessMap.get(messageBufferConnectionString);
+            if(Strings.isNullOrEmpty(messageBufferConnectionString))  {
+                if(this.inputOpBufferMap.containsKey(inputOp))
+                    return this.inputOpBufferMap.get(inputOp);
+            } else {
+                if(this.inputBufferMap.containsKey(messageBufferConnectionString))
+                    return this.inputBufferMap.get(messageBufferConnectionString);
+            }
         }
 
         return null;

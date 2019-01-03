@@ -21,12 +21,13 @@ public class SparkInput {
         String host = parameters.get("host", "0.0.0.0");
         int inputPort = Integer.parseInt(parameters.get("port", "9656"));
         int bufferSize = Integer.parseInt(parameters.getRequired("buffer"));
+        boolean requesterFaultTolerance = Boolean.parseBoolean(parameters.get("fault-tolerance", "false"));
 
         SparkConf sparkConf = new SparkConf()
                 //.set("spark.default.parallelism", "1")
                 //.set("spark.executor.memory","4g")
                 //.set("spark.executor.instances", "1")
-                .setMaster("local[*]")
+                //.setMaster("local[*]")
                 .setAppName("SparkInput.sce2");
         JavaStreamingContext ssc = new JavaStreamingContext(sparkConf, new Duration(30000));
 
@@ -37,6 +38,7 @@ public class SparkInput {
                 .withRequestAddress(host, inputPort, DSPConnectorFactory.ConnectorType.PRIMARY)
                 .withTimeout(1000)
                 .withHWM(bufferSize)
+                .withInputOperatorFaultTolerance(requesterFaultTolerance)
                 .build()));
 
         //      Count each word in each batch

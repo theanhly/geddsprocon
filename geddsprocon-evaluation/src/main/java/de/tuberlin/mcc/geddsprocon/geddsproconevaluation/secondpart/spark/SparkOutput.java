@@ -36,7 +36,7 @@ public class SparkOutput {
                 //.set("spark.executor.instances", "1")
                 //.set("spark.task.cpus", "1")
                 //.set("spark.executor.memory","4g")
-                .setMaster("local[*]")
+                //.setMaster("local[*]")
                 .setAppName("SparkOutput.sce2");
         JavaStreamingContext ssc = new JavaStreamingContext(sparkConf, new Duration(5000));
 

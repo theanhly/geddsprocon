@@ -20,6 +20,7 @@ public class DSPConnectorConfig implements Serializable {
     private String connectorType;
     private String bufferConnectionString;
     private SocketPool.SocketType socketType;
+    private boolean inputOperatorFaultTolerance;
 
     private DSPConnectorConfig() {
         this("", -1);
@@ -33,6 +34,8 @@ public class DSPConnectorConfig implements Serializable {
     public ArrayList<Tuple2<String, Integer>> getAddresses() { return addresses; }
 
     public ArrayList<Tuple3<String, Integer, String>> getRequestAddresses() { return requestAddresses; }
+
+    public boolean getInputOperatorFaultTolerance() { return this.inputOperatorFaultTolerance; }
 
     public DSPConnectorFactory.DataStreamProcessors getDSP() {
         return this.dsp;
@@ -66,7 +69,7 @@ public class DSPConnectorConfig implements Serializable {
 
     public static class Builder implements Serializable {
         // timeout is half a minute. if the data cannot be sent or received to or from the socket it will return with an error.
-        private final int DEFAULTTIMEOUT = 5000;
+        private final int DEFAULTTIMEOUT = 15000;
 
         private ArrayList<Tuple2<String, Integer>> addresses;
         private ArrayList<Tuple3<String, Integer, String>> requestAddresses;
@@ -79,6 +82,7 @@ public class DSPConnectorConfig implements Serializable {
         private String connectorType = DSPConnectorFactory.ConnectorType.PRIMARY;
         private String bufferConnectionString = "";
         private SocketPool.SocketType socketType = SocketPool.SocketType.DEFAULT;
+        private boolean inputOperatorFaultTolerance = false;
 
         public Builder() {
             this("", -1);
@@ -112,6 +116,11 @@ public class DSPConnectorConfig implements Serializable {
          */
         public Builder withRequestAddress(String host, int port, String connectorType) {
             this.requestAddresses.add(new Tuple3<>(host,port, connectorType));
+            return this;
+        }
+
+        public Builder withInputOperatorFaultTolerance(boolean faultTolerance) {
+            this.inputOperatorFaultTolerance = faultTolerance;
             return this;
         }
 
@@ -213,6 +222,7 @@ public class DSPConnectorConfig implements Serializable {
             config.connectorType = this.connectorType;
             config.socketType = this.socketType;
             config.bufferConnectionString = this.bufferConnectionString;
+            config.inputOperatorFaultTolerance = this.inputOperatorFaultTolerance;
             return config;
         }
     }

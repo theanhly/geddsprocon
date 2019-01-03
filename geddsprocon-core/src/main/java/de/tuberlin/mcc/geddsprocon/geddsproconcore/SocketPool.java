@@ -207,15 +207,20 @@ public class SocketPool {
     }
 
     public synchronized void stopSockets(DSPConnectorConfig config) {
-        System.err.println("ERROR: STOPPING SOCKETS");
-        for(Tuple2<String, Integer> tuple : config.getAddresses())
-            stopSocket(tuple.f_0, tuple.f_1);
 
-        // do not terminate sockets because it could lead to exception when an operator is restarted
+        synchronized (DSPManager.getInstance().getDspManagerLock()) {
+            System.err.println("ERROR: STOPPING SOCKETS");
+            for(Tuple2<String, Integer> tuple : config.getAddresses())
+                stopSocket(tuple.f_0, tuple.f_1);
+
+            for(Tuple3<String, Integer, String> tuple : config.getRequestAddresses())
+                stopSocket(tuple.f_0, tuple.f_1);
+            // do not terminate sockets because it could lead to exception when an operator is restarted
         /*if(this.context != null) {
             this.context.term();
             this.context = null;
         }*/
+        }
     }
 
     public synchronized void stopSocket(String host, int port) {

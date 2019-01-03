@@ -59,7 +59,7 @@ public class FlinkOutputOperator extends RichSinkFunction<Serializable> implemen
      * @param value The value to write to the socket.
      */
     @Override
-    public void invoke(Serializable value, Context ctx) throws Exception {
+    public void invoke(Serializable value, Context ctx) {
         /*synchronized (DSPManager.getInstance().getDspManagerLock()) {
             if(!init) {
                 System.out.println("Output Op @Thread-ID: " + Thread.currentThread().getId() + " Init-Before: " + this.init);

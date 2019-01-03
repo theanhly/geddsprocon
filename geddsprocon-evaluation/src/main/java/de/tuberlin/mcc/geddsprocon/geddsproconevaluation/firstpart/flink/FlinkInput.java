@@ -18,6 +18,7 @@ public class FlinkInput {
             String host = parameters.get("host", "0.0.0.0");
             int inputPort = Integer.parseInt(parameters.get("port", "9656"));
             int bufferSize = Integer.parseInt(parameters.getRequired("buffer"));
+            boolean requesterFaultTolerance = Boolean.parseBoolean(parameters.get("fault-tolerance", "false"));
 
             StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
 
@@ -27,6 +28,7 @@ public class FlinkInput {
                             .withHWM(bufferSize)
                             .withTimeout(15000)
                             .withRequestAddress(host, inputPort, DSPConnectorFactory.ConnectorType.PRIMARY)
+                            .withInputOperatorFaultTolerance(requesterFaultTolerance)
                             .build()), TypeInfoParser.parse("Tuple2<String,Integer>"))
                     .keyBy("f0")
                     .timeWindow(Time.seconds(5))
