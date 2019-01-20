@@ -31,6 +31,9 @@ import org.apache.flink.streaming.api.functions.sink.SinkFunction;
 import org.apache.flink.streaming.api.functions.source.SourceFunction;
 import org.apache.flink.util.Collector;
 
+/**
+ * Alternative flink output separates the data source from the class -> start this class and then start the data source afterwards
+ */
 public class FlinkOutputAlternative {
 
     public static class Splitter implements FlatMapFunction<String, Tuple2<String, Integer>> {

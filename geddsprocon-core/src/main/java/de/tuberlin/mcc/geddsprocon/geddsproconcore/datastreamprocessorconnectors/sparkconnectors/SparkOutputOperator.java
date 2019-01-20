@@ -38,20 +38,16 @@ public class SparkOutputOperator<T extends JavaRDDLike> implements IDSPOutputOpe
     public SparkOutputOperator(DSPConnectorConfig config) {
         this.config = config;
         this.transform = config.getTransform();
+
+        // create buffer string out of the requester addresses.
+        // TODO: move buffer string creation to DSPManager so other DSP operators can access the same method
         this.messageBufferConnectionString = Strings.isNullOrEmpty(config.getBufferConnectionString()) ? this.config.getHost() + ":" + this.config.getPort() : "ipc:///" +  config.getBufferConnectionString();
     }
 
     @Override
     public void call(T value) throws Exception {
         synchronized (DSPManager.getInstance().getDspManagerLock()) {
-           /* if(!init) {
-                DSPManager.getInstance().initiateOutputOperator(this.config, this);
-                this.init = true;
-                System.out.println("Init Spark output before: " + java.lang.management.ManagementFactory.getRuntimeMXBean().getName());
-            }*/
-
             value.foreach(record ->  {
-                //System.out.println("Inside foreach " + java.lang.management.ManagementFactory.getRuntimeMXBean().getName());
 
                 if(!this.init) {
                     System.out.println("Init Spark output " + java.lang.management.ManagementFactory.getRuntimeMXBean().getName());
@@ -67,13 +63,10 @@ public class SparkOutputOperator<T extends JavaRDDLike> implements IDSPOutputOpe
                         byte[] byteMessage = SerializationTool.serialize((Serializable) record);
 
                         // block while the buffer is full
-                        //while(DSPManager.getInstance().getBuffer(this.messageBufferConnectionString).isFull()) {}
                         while (DSPManager.getInstance().getBuffer(this.messageBufferConnectionString).isFull()) {
                         }
 
-                        //DSPManager.getInstance().getBuffer(this.messageBufferConnectionString).writeBuffer(byteMessage);
                         DSPManager.getInstance().getBuffer(this.messageBufferConnectionString).writeBuffer(byteMessage);
-                        //System.out.println("Written to buffer");
                     }
                 }
             });
@@ -87,7 +80,6 @@ public class SparkOutputOperator<T extends JavaRDDLike> implements IDSPOutputOpe
 
     @Override
     public ZMsg flush(ZMsg message) {
-
         return message;
     }
 }

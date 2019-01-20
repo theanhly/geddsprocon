@@ -40,9 +40,6 @@ public class SparkInput {
         boolean requesterFaultTolerance = Boolean.parseBoolean(parameters.get("fault-tolerance", "false"));
 
         SparkConf sparkConf = new SparkConf()
-                //.set("spark.default.parallelism", "1")
-                //.set("spark.executor.memory","4g")
-                //.set("spark.executor.instances", "1")
                 //.setMaster("local[*]")
                 .setAppName("SparkInput.sce2");
         JavaStreamingContext ssc = new JavaStreamingContext(sparkConf, new Duration(30000));

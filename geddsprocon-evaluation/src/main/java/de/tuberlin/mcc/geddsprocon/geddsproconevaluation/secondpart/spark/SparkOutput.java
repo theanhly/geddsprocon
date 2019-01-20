@@ -48,10 +48,6 @@ public class SparkOutput {
         zeroMQDataProviderThread.start();
 
         SparkConf sparkConf = new SparkConf()
-                //.set("spark.default.parallelism", "1")
-                //.set("spark.executor.instances", "1")
-                //.set("spark.task.cpus", "1")
-                //.set("spark.executor.memory","4g")
                 //.setMaster("local[*]")
                 .setAppName("SparkOutput.sce2");
         JavaStreamingContext ssc = new JavaStreamingContext(sparkConf, new Duration(5000));

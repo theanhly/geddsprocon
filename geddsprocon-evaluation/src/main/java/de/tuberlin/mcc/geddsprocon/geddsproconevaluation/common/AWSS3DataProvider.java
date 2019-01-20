@@ -65,7 +65,6 @@ public class AWSS3DataProvider  implements Runnable {
 
             InputStreamReader inputReader = new InputStreamReader(o.getObjectContent());
             BufferedReader tsvReader = new BufferedReader(inputReader);
-            //BufferedWriter writer = new BufferedWriter(new FileWriter("/home/theanhly/Schreibtisch/reviews.txt", true));
 
             // skip first line
             String newLine = tsvReader.readLine();
@@ -74,7 +73,6 @@ public class AWSS3DataProvider  implements Runnable {
             while(newLine != null && !newLine.isEmpty()) {
                 String[] array = newLine.split("\t");
                 sender.send(SerializationTool.serialize(array[13]));
-                //System.out.println("Review: " + array[13]);
                 newLine = tsvReader.readLine();
             }
             System.out.println("ZeroMQDataProvider: Sending END_DATA" );
@@ -83,15 +81,6 @@ public class AWSS3DataProvider  implements Runnable {
             inputReader.close();
             o.close();
             tsvReader.close();
-            /*S3ObjectInputStream s3is = o.getObjectContent();
-            FileOutputStream fos = new FileOutputStream(new File(key_name));
-            byte[] read_buf = new byte[1024];
-            int read_len = 0;
-            while ((read_len = s3is.read(read_buf)) > 0) {
-                fos.write(read_buf, 0, read_len);
-            }
-            s3is.close();
-            fos.close();*/
         } catch (AmazonServiceException e) {
             System.err.println(e.getErrorMessage());
             System.exit(1);

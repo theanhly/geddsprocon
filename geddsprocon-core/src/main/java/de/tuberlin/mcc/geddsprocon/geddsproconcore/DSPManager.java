@@ -134,8 +134,6 @@ public class DSPManager {
         MessageBuffer messageBuffer = null;
 
         if(!this.outputBufferMap.containsKey(messageBufferString)) {
-            //String messageBufferConnectionString = messageBuffer.initiateBuffer(config);
-            //this.outputBufferMap.put(messageBufferConnectionString, messageBuffer);
             messageBuffer = new MessageBuffer();
             messageBufferString = messageBuffer.initiateBuffer(config);
             this.outputBufferMap.put(messageBufferString, messageBuffer);

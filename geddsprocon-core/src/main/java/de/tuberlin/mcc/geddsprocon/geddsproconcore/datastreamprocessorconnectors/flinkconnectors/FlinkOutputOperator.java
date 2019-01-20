@@ -43,9 +43,9 @@ public class FlinkOutputOperator extends RichSinkFunction<Serializable> implemen
     private LinkedList previousOutputBuffer;
 
     public FlinkOutputOperator(DSPConnectorConfig config) {
-        //this.messageBufferConnectionString = "ipc:///" + config.getBufferConnectionString();
+        // create buffer string out of the requester addresses.
+        // TODO: move buffer string creation to DSPManager so other DSP operators can access the same method
         this.messageBufferConnectionString = Strings.isNullOrEmpty(config.getBufferConnectionString()) ? config.getHost() + ":" + config.getPort() : "ipc:///" + config.getBufferConnectionString();
-        System.out.println("Buffer string flink: " + messageBufferConnectionString);
         this.config = config;
         this.transform = config.getTransform();
         this.init = false;
@@ -60,7 +60,6 @@ public class FlinkOutputOperator extends RichSinkFunction<Serializable> implemen
     @Override
     public void open(Configuration parameters) {
         synchronized (DSPManager.getInstance().getDspManagerLock()) {
-            //System.out.println("Output Op @Thread-ID: " + Thread.currentThread().getId() + " Init-Before: " + this.init);
             DSPManager.getInstance().initiateOutputOperator(this.config, this);
             this.init = true;
             System.out.println("Output Op @Thread-ID: " + Thread.currentThread().getId() + " Init-After: " + this.init);
@@ -76,15 +75,6 @@ public class FlinkOutputOperator extends RichSinkFunction<Serializable> implemen
      */
     @Override
     public void invoke(Serializable value, Context ctx) {
-        /*synchronized (DSPManager.getInstance().getDspManagerLock()) {
-            if(!init) {
-                System.out.println("Output Op @Thread-ID: " + Thread.currentThread().getId() + " Init-Before: " + this.init);
-                DSPManager.getInstance().initiateOutputOperator(config, this);
-                this.init = true;
-                System.out.println("Output Op @Thread-ID: " + Thread.currentThread().getId() + " Init-After: " + this.init);
-            }
-        }*/
-
         if(this.isRunning && this.init) {
             if(this.transform && value instanceof Tuple)
                 value = TupleTransformer.transformToIntermediateTuple((Tuple)value);
@@ -95,13 +85,6 @@ public class FlinkOutputOperator extends RichSinkFunction<Serializable> implemen
             while(DSPManager.getInstance().getBuffer(this.messageBufferConnectionString).isFull()) {}
 
             DSPManager.getInstance().getBuffer(this.messageBufferConnectionString).writeBuffer(byteMessage);
-
-            if(!this.isMessageBufferProcess) {
-                synchronized(this) {
-                    //this.outputBuffer.add(byteMessage);
-                }
-            }
-
         }
     }
 

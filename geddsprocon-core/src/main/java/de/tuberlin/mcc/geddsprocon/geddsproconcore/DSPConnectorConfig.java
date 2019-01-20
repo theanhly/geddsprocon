@@ -116,6 +116,7 @@ public class DSPConnectorConfig implements Serializable {
          * @param connectorString Connector string
          * @return Connector config builder
          */
+        @Deprecated
         public Builder withBufferConnectorString(String connectorString) {
             this.bufferConnectionString = connectorString;
             return this;

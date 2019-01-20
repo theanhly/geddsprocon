@@ -106,9 +106,6 @@ public class FlinkTests {
         try {
             ZMQ.Context context = ZMQ.context(1);
 
-            //  Socket to talk to server
-            System.out.println("Connecting to hello world server…");
-
             ZMQ.Socket sender = context.socket(ZMQ.PUSH);
             sender.connect("tcp://localhost:9665");
             String[] testArray = new String[1];
@@ -131,7 +128,6 @@ public class FlinkTests {
             dataStream.addSink((SinkFunction)DSPConnectorFactory.getInstance().createOutputOperator(new DSPConnectorConfig.Builder("localhost", 9656)
                     .withDSP("flink")
                     .withHWM(20)
-                    //.withBufferConnectorString("sendbuffer")
                     .withTimeout(10000)
                     .build()));
 
@@ -156,9 +152,6 @@ public class FlinkTests {
     public void pullBasedApproachComplexSink1() {
         try {
             ZMQ.Context context = ZMQ.context(1);
-
-            //  Socket to talk to server
-            System.out.println("Connecting to hello world server…");
 
             ZMQ.Socket sender = context.socket(ZMQ.PUSH);
             sender.connect("tcp://localhost:9665");
@@ -191,7 +184,6 @@ public class FlinkTests {
             dataStream3.addSink((SinkFunction)DSPConnectorFactory.getInstance().createOutputOperator(new DSPConnectorConfig.Builder("localhost", 9656)
                     .withDSP("flink")
                     .withHWM(20)
-                    //.withBufferConnectorString("sendbuffer")
                     .withTimeout(10000)
                     .build()));
 
@@ -214,7 +206,6 @@ public class FlinkTests {
             DataStream<Tuple2<String, Integer>> dataStream = env
                     .addSource((SourceFunction)DSPConnectorFactory.getInstance().createInputOperator(new DSPConnectorConfig.Builder()
                             .withDSP("flink")
-                            //.withBufferConnectorString("recvbuffer")
                             .withRequestAddress("localhost", 9656, DSPConnectorFactory.ConnectorType.PRIMARY)
                             .withRequestAddress("localhost", 9666, DSPConnectorFactory.ConnectorType.PRIMARY)
                             .build()), TypeInfoParser.parse("Tuple2<String,Integer>"))
@@ -241,7 +232,6 @@ public class FlinkTests {
             DataStream<Tuple2<String, Integer>> dataStream = env
                     .addSource((SourceFunction)DSPConnectorFactory.getInstance().createInputOperator(new DSPConnectorConfig.Builder()
                             .withDSP("flink")
-                            .withBufferConnectorString("recvbuffer")
                             .withRequestAddress("localhost", 9656, DSPConnectorFactory.ConnectorType.SECONDARY)
                             .withRequestAddress("localhost", 9666, DSPConnectorFactory.ConnectorType.SECONDARY)
                             .build()), TypeInfoParser.parse("Tuple2<String,Integer>"))
@@ -269,9 +259,6 @@ public class FlinkTests {
     public void exceptionSimpleSink1() {
         try {
             ZMQ.Context context = ZMQ.context(1);
-
-            //  Socket to talk to server
-            System.out.println("Connecting to hello world server…");
 
             ZMQ.Socket sender = context.socket(ZMQ.PUSH);
             sender.connect("tcp://localhost:9665");

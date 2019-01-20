@@ -68,7 +68,6 @@ public class FlinkOutputOperatorExample {
         dataStream.addSink((SinkFunction)DSPConnectorFactory.getInstance().createOutputOperator(new DSPConnectorConfig.Builder("192.168.56.102", 9656)
                 .withDSP("flink")
                 .withHWM(20)
-                .withBufferConnectorString("sendbuffer")
                 .withTimeout(10000)
                 .build()));
 

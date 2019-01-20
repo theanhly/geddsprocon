@@ -206,9 +206,7 @@ public class SocketPool {
         String newHost = currentHost;
         int newPort = currentPort;
 
-        for(int i = iteration + 1; !socket.send(message/*, addresses.size() > 1 ? ZMQ.DONTWAIT : 0*/); i++) {
-            //socket.close();
-            //SocketPool.getInstance().createSocket(SocketPool.SocketType.PUSH, newHost, newPort, this.config);
+        for(int i = iteration + 1; !socket.send(message); i++) {
             iteration = i;
             newHost = addresses.get(i%addresses.size()).f_0;
             newPort = addresses.get(i%addresses.size()).f_1;
@@ -231,11 +229,12 @@ public class SocketPool {
 
             for(Tuple3<String, Integer, String> tuple : config.getRequestAddresses())
                 stopSocket(tuple.f_0, tuple.f_1);
-            // do not terminate sockets because it could lead to exception when an operator is restarted
-        /*if(this.context != null) {
-            this.context.term();
-            this.context = null;
-        }*/
+
+            // do not terminate context because it could lead to exception when an operator is restarted
+            /*if(this.context != null) {
+                this.context.term();
+                this.context = null;
+            }*/
         }
     }
 

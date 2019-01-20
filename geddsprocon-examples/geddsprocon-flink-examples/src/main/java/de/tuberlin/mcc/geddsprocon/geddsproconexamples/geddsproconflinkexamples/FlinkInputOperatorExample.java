@@ -33,7 +33,6 @@ public class FlinkInputOperatorExample {
         DataStream<Tuple2<String, Integer>> dataStream = env
                 .addSource((SourceFunction)DSPConnectorFactory.getInstance().createInputOperator(new DSPConnectorConfig.Builder()
                         .withDSP("flink")
-                        .withBufferConnectorString("recvbuffer")
                         .withRequestAddress("192.168.56.102", 9656, DSPConnectorFactory.ConnectorType.SECONDARY)
                         .withRequestAddress("192.168.56.102", 9666, DSPConnectorFactory.ConnectorType.SECONDARY)
                         .build()), TypeInfoParser.parse("Tuple2<String,Integer>"))

@@ -47,12 +47,7 @@ public class SparkOutput {
         zeroMQDataProviderThread.start();
 
         SparkConf sparkConf = new SparkConf()
-                //.set("spark.worker.instances", "1")
-                //.set("spark.executor.instances", "1")
-                //.set("spark.task.cpus", "1")
-                //.set("spark.streaming.backpressure.enabled", "true")
-                //.set("spark.executor.memory","4g")
-                //.setMaster("local[*]")
+                //.setMaster("local[*]") // use this for local tests
                 .setAppName("SparkOutput");
         JavaStreamingContext ssc = new JavaStreamingContext(sparkConf, new Duration(5000));
 

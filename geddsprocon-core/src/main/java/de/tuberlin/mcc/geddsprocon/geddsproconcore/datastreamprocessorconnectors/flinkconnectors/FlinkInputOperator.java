@@ -45,7 +45,10 @@ public class FlinkInputOperator extends RichParallelSourceFunction<Serializable>
 
     public FlinkInputOperator(DSPConnectorConfig config) {
         this.config = config;
-        this.messageBufferConnectionString =  ""; //Strings.isNullOrEmpty(config.getBufferConnectionString()) ? config.getHost() + ":" + config.getPort() : "ipc:///" + config.getBufferConnectionString();
+        this.messageBufferConnectionString =  "";
+
+        // create buffer string out of the requester addresses.
+        // TODO: move buffer string creation to DSPManager so other DSP operators can access the same method
         if(config.getInputOperatorFaultTolerance()) {
             for(Tuple3<String, Integer, String> tuple : config.getRequestAddresses())
                 this.messageBufferConnectionString  += tuple.f_0 + ":" + tuple.f_1 + ";";
@@ -70,14 +73,6 @@ public class FlinkInputOperator extends RichParallelSourceFunction<Serializable>
     }
 
     private synchronized void collect(SourceContext<Serializable> ctx) {
-        /*synchronized (DSPManager.getInstance().getDspManagerLock()) {
-            if(!this.init) {
-                DSPManager.getInstance().initiateInputOperator(this.config, this);
-                this.init = true;
-            }
-
-        }*/
-
         while(isRunning && this.init) {
             byte[] byteMessage;
 
@@ -108,7 +103,6 @@ public class FlinkInputOperator extends RichParallelSourceFunction<Serializable>
         try {
             DSPManager.getInstance().stopRequester(this);
             SocketPool.getInstance().stopSockets(this.config);
-            //SocketPool.getInstance().stopSocket(this.host, this.port);
         } catch (IllegalArgumentException  ex) {
             System.err.println(ex.toString());
         }
@@ -122,20 +116,7 @@ public class FlinkInputOperator extends RichParallelSourceFunction<Serializable>
 
     @Override
     public synchronized ZMsg flush(ZMsg messages) {
-        //System.out.println("flushbefore messages:  " + messages.size());
         if(messages != null) {
-            /*Iterator frameIterator = messages.iterator();
-
-            while(frameIterator.hasNext()) {
-
-                Serializable message = (Serializable)SerializationTool.deserialize(((ZFrame)frameIterator.next()).getData());
-
-                if(message instanceof de.tuberlin.mcc.geddsprocon.geddsproconcore.tuple.Tuple && this.transform)
-                    message = TupleTransformer.transformFromIntermediateTuple((de.tuberlin.mcc.geddsprocon.geddsproconcore.tuple.Tuple)message);
-
-                //System.out.println("flush: " + message.toString());
-                this.ctx.collect(message);
-            }*/
             for(ZFrame frame : messages) {
 
                 Serializable message = (Serializable)SerializationTool.deserialize(frame.getData());

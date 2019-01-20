@@ -23,6 +23,9 @@ import org.zeromq.ZMQ;
 import java.io.*;
 import java.time.LocalDateTime;
 
+/**
+ * Sends the data source via FileReader
+ */
 public class ZeroMQDataProvider implements Runnable {
     private String host;
     private int port;
@@ -39,9 +42,6 @@ public class ZeroMQDataProvider implements Runnable {
         try {
             ZMQ.Context context = ZMQ.context(1);
 
-            //  Socket to talk to server
-            System.out.println("Connecting to hello world server…");
-
             ZMQ.Socket sender = context.socket(ZMQ.PUSH);
             sender.setSndHWM(100000);
             sender.connect("tcp://" + this.host + ":" + this.port);
@@ -49,17 +49,13 @@ public class ZeroMQDataProvider implements Runnable {
             sender.send(SerializationTool.serialize("START_DATA"));
             FileReader reader = new FileReader(this.file);
             BufferedReader tsvReader = new BufferedReader(reader);
-            //BufferedWriter writer = new BufferedWriter(new FileWriter("/home/theanhly/Schreibtisch/reviews.txt", true));
 
             // skip first line
             String newLine = tsvReader.readLine();
             newLine = tsvReader.readLine();
             while(newLine != null && !newLine.isEmpty()) {
                 String[] array = newLine.split("\t");
-                /*for(String word : array[13].split(" "))
-                    sender.send(SerializationTool.serialize(new Tuple2<String, Integer>(word, 1)));*/
                 sender.send(SerializationTool.serialize(array[13]));
-                //writer.append(array[13] + "\n");
                 newLine = tsvReader.readLine();
             }
             System.out.println("ZeroMQDataProvider: Sending END_DATA" );

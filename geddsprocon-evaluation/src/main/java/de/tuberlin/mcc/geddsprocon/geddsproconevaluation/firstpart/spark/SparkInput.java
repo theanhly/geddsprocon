@@ -39,11 +39,7 @@ public class SparkInput {
         boolean requesterFaultTolerance = Boolean.parseBoolean(parameters.get("fault-tolerance", "false"));
 
         SparkConf sparkConf = new SparkConf()
-                //.set("spark.task.cpus", "1")
-                //.set("spark.default.parallelism", "1")
-                //.set("spark.streaming.backpressure.enabled", "true")
-                //.set("spark.executor.memory","2g")
-                //.setMaster("local[*]")
+                //.setMaster("local[*]") // use this for local tests
                 .setAppName("SparkInput");
         JavaStreamingContext ssc = new JavaStreamingContext(sparkConf, new Duration(5000));
 

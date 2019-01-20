@@ -38,8 +38,6 @@ import java.util.Arrays;
 public class SparkOutputOperatorExample {
 
     public static void main(String[] args) throws InterruptedException {
-        System.out.println("Connecting to hello world server…");
-
         ZMQ.Context context = ZMQ.context(1);
 
         ZMQ.Socket sender = context.socket(ZMQ.PUSH);
@@ -75,7 +73,6 @@ public class SparkOutputOperatorExample {
         pairs.foreachRDD((VoidFunction)DSPConnectorFactory.getInstance().createOutputOperator(new DSPConnectorConfig.Builder("192.168.56.102", 9656)
                 .withDSP("spark")
                 .withHWM(20)
-                .withBufferConnectorString("sendbuffer")
                 .withTimeout(10000)
                 .build()));
 

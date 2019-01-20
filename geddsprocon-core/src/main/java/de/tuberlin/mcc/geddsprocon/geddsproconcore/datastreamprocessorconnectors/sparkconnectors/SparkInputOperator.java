@@ -41,7 +41,10 @@ public class SparkInputOperator extends Receiver<Serializable> implements IDSPIn
 
     public SparkInputOperator(DSPConnectorConfig config) {
         super(StorageLevel.MEMORY_AND_DISK_2());
-        this.messageBufferConnectionString = ""; //!Strings.isNullOrEmpty(config.getBufferConnectionString()) ? "ipc:///" + config.getBufferConnectionString() : "";
+        this.messageBufferConnectionString = "";
+
+        // create buffer string out of the requester addresses.
+        // TODO: move buffer string creation to DSPManager so other DSP operators can access the same method
         if(config.getInputOperatorFaultTolerance()) {
             for(Tuple3<String, Integer, String> tuple : config.getRequestAddresses())
                 this.messageBufferConnectionString  += tuple.f_0 + ":" + tuple.f_1 + ";";

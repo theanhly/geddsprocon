@@ -1,4 +1,4 @@
-# geddsprocon-messagebuffer
+# geddsprocon-messagebuffer (Deprecated)
 The message-buffer is a separate process and runs besides the data stream processing pipeline and is used to buffer all 
 data which is sent/received by the pipeline. It is necessary to start the message-buffer before running the data stream 
 processing pipeline. 
